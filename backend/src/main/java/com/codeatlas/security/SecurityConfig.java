@@ -2,6 +2,7 @@ package com.codeatlas.security;
 
 import javax.sql.DataSource;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -63,10 +64,19 @@ public class SecurityConfig {
         return http.build();
     }
 
+    /**
+     * Browser origins permitted to call the API. Defaults to the local dev
+     * server; a tunnelled or deployed frontend supplies its own origin through
+     * CODEATLAS_ALLOWED_ORIGINS rather than this being opened up in code.
+     */
+    @Value("${codeatlas.allowed-origins:http://localhost:4200}")
+    private String allowedOrigins;
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:4200"));
+        configuration.setAllowedOriginPatterns(
+                List.of(allowedOrigins.split("\\s*,\\s*")));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);

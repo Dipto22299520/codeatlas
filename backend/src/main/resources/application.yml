@@ -27,6 +27,9 @@ management:
         enabled: true
 
 codeatlas:
+  # Browser origins allowed to call the API (comma separated).
+  # Supports patterns, e.g. https://*.trycloudflare.com
+  allowed-origins: ${CODEATLAS_ALLOWED_ORIGINS:http://localhost:4200}
   # Deployment profile: demo | enterprise  (README section 1)
   profile: ${CODEATLAS_PROFILE:demo}
   platform-owner: ${CODEATLAS_PLATFORM_OWNER:Platform Owner (unset)}
