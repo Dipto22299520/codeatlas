@@ -166,9 +166,14 @@ public class RefreshService {
                     manifestHash, manifestHash, Instant.now());
 
             new JavaSpringAnalyzer(asset.id(), manifestHash, root, model).analyze(javaFiles);
-            extractConfiguration(asset, root, scan.files(), revisionId, model);
+
+            // Collect configuration locations first, then persist every location,
+            // so reference snapshots can reference a row that already exists.
+            List<PendingSnapshot> pendingSnapshots =
+                    collectConfiguration(asset, root, scan.files(), revisionId, model);
 
             store.saveLocations(revisionId, model.locations());
+            writeSnapshots(pendingSnapshots);
             store.saveNodes(generationId, model.nodes());
             store.saveEdges(generationId, model.edges());
             store.saveCoverageFindings(generationId, model.findings());
@@ -258,13 +263,21 @@ public class RefreshService {
     }
 
     /** Snapshots only allowlisted configuration keys (BR-41, CC-8). */
-    private void extractConfiguration(AssetRegistry.Asset asset, Path root, List<Path> files,
-                                      String revisionId, ExtractedModel model) {
+    /** A snapshot waiting for its source location row to be written. */
+    private record PendingSnapshot(String id, String assetId, String configKey, String valueType,
+                                   String valueText, String sourcePath, String revisionId,
+                                   String locationId, String checksum) {
+    }
+
+    private List<PendingSnapshot> collectConfiguration(AssetRegistry.Asset asset, Path root,
+                                                       List<Path> files, String revisionId,
+                                                       ExtractedModel model) {
+        List<PendingSnapshot> pending = new ArrayList<>();
         List<Map<String, Object>> allowlist = jdbc.queryForList(
                 "SELECT config_key, value_type FROM reference_allowlist WHERE asset_id = ?",
                 asset.id());
         if (allowlist.isEmpty()) {
-            return;
+            return pending;
         }
 
         for (Path file : files) {
@@ -297,13 +310,23 @@ public class RefreshService {
 
                 String snapshotId = "snap-" + Identities.shortHash(
                         asset.id() + "|" + value.key() + "|" + revisionId);
-                jdbc.update("INSERT INTO reference_snapshot (id, asset_id, config_key, value_type, "
-                        + "value_text, source_path, revision_id, location_id, checksum) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO NOTHING",
-                        snapshotId, asset.id(), value.key(), String.valueOf(approved.get("value_type")),
-                        value.value(), relative, revisionId, locationId,
-                        Identities.sha256(value.value()));
+                pending.add(new PendingSnapshot(snapshotId, asset.id(), value.key(),
+                        String.valueOf(approved.get("value_type")), value.value(), relative,
+                        revisionId, locationId, Identities.sha256(value.value())));
             }
+        }
+        return pending;
+    }
+
+    /** Writes snapshots once their source locations exist. */
+    private void writeSnapshots(List<PendingSnapshot> pending) {
+        for (PendingSnapshot snapshot : pending) {
+            jdbc.update("INSERT INTO reference_snapshot (id, asset_id, config_key, value_type, "
+                    + "value_text, source_path, revision_id, location_id, checksum) "
+                    + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO NOTHING",
+                    snapshot.id(), snapshot.assetId(), snapshot.configKey(), snapshot.valueType(),
+                    snapshot.valueText(), snapshot.sourcePath(), snapshot.revisionId(),
+                    snapshot.locationId(), snapshot.checksum());
         }
     }
 
