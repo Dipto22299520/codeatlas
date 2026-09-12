@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: codeatlas
+    runtime: docker
+    plan: free
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: CODEATLAS_PROFILE
+        value: demo
+      - key: CODEATLAS_SOURCE_ROOT
+        value: /app/demo-estate
+      - key: CODEATLAS_ALLOWED_ORIGINS
+        value: "*"
+      - key: CODEATLAS_DB_URL
+        fromDatabase:
+          name: codeatlas-db
+          property: connectionString
+      - key: CODEATLAS_MODEL_BASE_URL
+        sync: false
+      - key: CODEATLAS_MODEL_API_KEY
+        sync: false
+      - key: CODEATLAS_MODEL_NAME
+        sync: false
+
+databases:
+  - name: codeatlas-db
+    plan: free

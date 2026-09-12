@@ -6,6 +6,7 @@ set -uo pipefail
 cd "$(dirname "$0")"
 export JAVA_HOME="${JAVA_HOME:-/usr/lib/jvm/java-21-openjdk-amd64}"
 LOGS="$PWD/.logs"; mkdir -p "$LOGS"
+[[ -f .env ]] && { set -a; source ./.env; set +a; }
 TUNNEL=0; [[ "${1:-}" == "--tunnel" ]] && TUNNEL=1
 
 say() { echo; echo "=== $1"; }
@@ -55,15 +56,31 @@ if r.get('failureReason'): print('     reason:', r['failureReason'][:160])
 
 if [[ $TUNNEL -eq 1 ]]; then
   say "5/5  Public tunnel"
-  pkill -f "cloudflared tunnel" 2>/dev/null; sleep 1
+  pkill -f "cloudflared tunnel" 2>/dev/null
+  pkill -f "ngrok http" 2>/dev/null; sleep 1
   rm -f "$LOGS/tunnel.log"
-  setsid nohup ~/bin/cloudflared tunnel --url http://localhost:4200 \
-    > "$LOGS/tunnel.log" 2>&1 < /dev/null & disown
-  for i in {1..45}; do
-    URL=$(grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' "$LOGS/tunnel.log" 2>/dev/null | head -1)
-    [[ -n "${URL:-}" ]] && break
-    sleep 1
-  done
+
+  # A reserved ngrok domain gives a URL that survives restarts. Set
+  # NGROK_DOMAIN in .env to use it; otherwise fall back to Cloudflare, whose
+  # quick tunnels have no browser interstitial but a new URL each time.
+  if [[ -n "${NGROK_DOMAIN:-}" ]]; then
+    setsid nohup ngrok http 4200 --domain="$NGROK_DOMAIN" \
+      --request-header-add "ngrok-skip-browser-warning:1" \
+      --log=stdout --log-format=logfmt > "$LOGS/tunnel.log" 2>&1 < /dev/null & disown
+    for i in {1..30}; do
+      URL=$(grep -oE 'https://[a-zA-Z0-9.-]+\.ngrok[a-z.-]*' "$LOGS/tunnel.log" 2>/dev/null | head -1)
+      [[ -n "${URL:-}" ]] && break
+      sleep 1
+    done
+  else
+    setsid nohup ~/bin/cloudflared tunnel --url http://localhost:4200 \
+      > "$LOGS/tunnel.log" 2>&1 < /dev/null & disown
+    for i in {1..45}; do
+      URL=$(grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' "$LOGS/tunnel.log" 2>/dev/null | head -1)
+      [[ -n "${URL:-}" ]] && break
+      sleep 1
+    done
+  fi
   if [[ -n "${URL:-}" ]]; then
     echo "$URL" > "$LOGS/public-url.txt"
     echo "     PUBLIC URL: $URL"
