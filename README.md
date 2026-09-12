@@ -508,3 +508,53 @@ The following local IDs organize the unnumbered company rules; they are not new 
 **Hackathon demonstration done:** clean startup works; the primary workflow derives real evidence from fixture sources; impact results show actual paths and limits; refresh demonstrates actual changes; unknowns are honest; no private source leaves the boundary; UI is connected; critical checks pass; the requirement status and demo instructions are accurate.
 
 **Company scope done:** every Must requirement above is implemented and verified, all company acceptance scenarios have recorded results, and unmet Should requirements are documented. The hackathon milestone and company completion are deliberately separate acceptance gates.
+
+---
+
+## 17. Implementation notes (appended by the build)
+
+This section is appended to the specification above, which remains authoritative.
+It records what was actually built and where the gaps are.
+
+### Delivered
+
+| Area | Location |
+|---|---|
+| Backend (Spring Boot 3.5.3, Java 21) | `backend/` |
+| Frontend (Angular 21) | `frontend/` |
+| Synthetic fixture, two revisions | `demo-estate/revisions/{A,B}/` |
+| Evaluation corpus and harness | `evaluation/` |
+| Setup, demo script, requirement status | `docs/` |
+
+### Quick start
+
+```bash
+cp .env.example .env          # optional: add a model endpoint
+docker compose up -d          # PostgreSQL on :55432
+./run-backend.sh              # backend on :8090
+cd frontend && npm install && npx ng serve   # UI on :4200
+```
+
+Sign in as `owner` / `owner-demo` and run a full refresh. Full instructions in
+[docs/SETUP.md](docs/SETUP.md); the demo walkthrough is in [docs/DEMO.md](docs/DEMO.md).
+
+### Measured results
+
+- **21 automated tests pass** (extraction, determinism, authorization, refresh
+  publication, broken-anchor handling, prompt injection, profile boundary).
+- **9/9 evaluation questions pass** with every factual claim traceable to source.
+- **Latency p50 718 ms, p95 2552 ms** on this host with `openai/gpt-oss-120b`,
+  measured on the 16-file fixture — not an enterprise workload.
+- Extraction produces **79 nodes and 112 edges**, with **2 inferred
+  cross-application links** and **3 coverage findings**.
+
+### Principal gaps
+
+The MCP assistant interface (BR-58/59/63) is **not built**; services are exposed
+over authenticated REST from the same single registry. Retrieval is keyword-based,
+so **BR-33 is partial, not semantic compliance**. Incremental refresh, the expert
+query DSL, and scale benchmarks are not implemented. Full accounting, including
+everything marked partial or missing, is in
+[docs/REQUIREMENTS-STATUS.md](docs/REQUIREMENTS-STATUS.md).
+
+This is a working vertical slice, not a production-ready system.
