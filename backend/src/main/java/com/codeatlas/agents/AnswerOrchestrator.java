@@ -133,9 +133,13 @@ public class AnswerOrchestrator {
 
         if (contains(q, "where should", "where do i add", "where would i add",
                 "where to add", "best place", "placement")) {
-            return new Plan("placement", map("intent", question,
-                    "processId", "proc-purchase-approval"),
-                    "asks where a change belongs");
+            String process = resolveProcess(question);
+            return process == null
+                    ? new Plan("search", map("query", question),
+                            "asks where a change belongs; no curated process matched")
+                    : new Plan("placement", map("intent", question,
+                            "processId", process),
+                            "asks where a change belongs");
         }
         if (contains(q, "what happens if", "fails", "failure", "error", "broke",
                 "went wrong", "rejected because")) {
@@ -144,8 +148,12 @@ public class AnswerOrchestrator {
         }
         if (contains(q, "what data", "which data", "what is written", "what does it write",
                 "what is stored", "what gets stored", "data change", "state change")) {
-            return new Plan("effects", map("processId", "proc-purchase-approval"),
-                    "asks what data changes");
+            String process = resolveProcess(question);
+            return process == null
+                    ? new Plan("effects", map("symbol", keyPhrase(question)),
+                            "asks what data changes; no curated process matched")
+                    : new Plan("effects", map("processId", process),
+                            "asks what data changes");
         }
         if (contains(q, "what else", "affected", "impact of", "if we change",
                 "if the", "knock-on")) {
@@ -154,14 +162,24 @@ public class AnswerOrchestrator {
         }
         if (contains(q, "how does", "how do", "walk through", "end to end",
                 "process work", "steps")) {
-            return new Plan("describe_process",
-                    map("processId", "proc-purchase-approval"),
-                    "asks how a process works");
+            String process = resolveProcess(question);
+            // Only describe a curated process when one actually matches the
+            // question. Otherwise fall through to retrieval over the source.
+            if (process != null) {
+                return new Plan("describe_process", map("processId", process),
+                        "asks how a curated process works");
+            }
+            return new Plan("search", map("query", question),
+                    "asks how something works; no curated process matched");
         }
         if (contains(q, "which validation", "what validation", "what checks",
                 "which checks", "rule enforce", "enforced", "validated")) {
-            return new Plan("checks", map("processId", "proc-purchase-approval"),
-                    "asks which validations apply");
+            String process = resolveProcess(question);
+            return process == null
+                    ? new Plan("search", map("query", question),
+                            "asks about validations; no curated process matched")
+                    : new Plan("checks", map("processId", process),
+                            "asks which validations apply");
         }
         if (contains(q, "threshold", "limit", "configured", "configuration",
                 "value of", "set to")) {
@@ -173,6 +191,49 @@ public class AnswerOrchestrator {
                     "asks for an explanation");
         }
         return new Plan("search", map("query", question), "general retrieval");
+    }
+
+    /**
+     * Finds a curated process whose business name shares a meaningful word with
+     * the question. Returns null when the estate has no such process, so the
+     * planner can fall back to source retrieval rather than answering about an
+     * unrelated process.
+     */
+    private String resolveProcess(String question) {
+        String lower = question.toLowerCase(Locale.ROOT);
+        List<Map<String, Object>> processes = jdbc.queryForList(
+                "SELECT p.id, p.business_name FROM business_process p "
+                + "WHERE EXISTS (SELECT 1 FROM process_stage s WHERE s.process_id = p.id)");
+        String best = null;
+        int bestScore = 0;
+        for (Map<String, Object> process : processes) {
+            String name = String.valueOf(process.get("business_name")).toLowerCase(Locale.ROOT);
+            if (lower.contains(name)) {
+                return String.valueOf(process.get("id"));
+            }
+            int score = 0;
+            for (String word : name.split("\\W+")) {
+                if (word.length() >= 5 && lower.contains(word)) {
+                    score++;
+                }
+            }
+            if (score > bestScore) {
+                bestScore = score;
+                best = String.valueOf(process.get("id"));
+            }
+        }
+        return bestScore >= 1 ? best : null;
+    }
+
+    /** The longest meaningful word in a question, for symbol-style lookups. */
+    private String keyPhrase(String question) {
+        String best = "";
+        for (String word : question.split("\\W+")) {
+            if (word.length() > best.length()) {
+                best = word;
+            }
+        }
+        return best;
     }
 
     private Map<String, Object> configurationInput(String question) {
