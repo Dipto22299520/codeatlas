@@ -33,7 +33,6 @@
 ---
 
 ## 0:35–1:05 — What it is
-
 > "CodeAtlas reads your registered source code with a real parser — not a model —
 > and builds a knowledge graph where every fact points back to exact source.
 > Humans attach business meaning to specific symbols. When you ask a question,

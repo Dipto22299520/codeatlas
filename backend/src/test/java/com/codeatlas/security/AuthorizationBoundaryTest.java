@@ -89,6 +89,33 @@ class AuthorizationBoundaryTest {
         assertThat(result.getResponse().getContentAsString()).contains("payment-service");
     }
 
+    /**
+     * Curated business meaning honours the same asset boundary as retrieval:
+     * a statement anchored only to an unauthorized asset must not be listed,
+     * and superseded versions must not surface stale broken-anchor warnings.
+     */
+    @Test
+    void meaningListIsScopedAndExcludesSupersededVersions() throws Exception {
+        MvcResult readerResult = mockMvc.perform(get("/api/meaning")
+                        .with(httpBasic("reader", "reader-demo")))
+                .andExpect(status().isOk())
+                .andReturn();
+        String readerBody = readerResult.getResponse().getContentAsString();
+
+        // The reader has no payment-service grant.
+        assertThat(readerBody).doesNotContain("Supplier spending eligibility");
+        assertThat(readerBody).doesNotContain("superseded");
+
+        MvcResult reviewerResult = mockMvc.perform(get("/api/meaning")
+                        .with(httpBasic("reviewer", "reviewer-demo")))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        // The reviewer does hold that grant.
+        assertThat(reviewerResult.getResponse().getContentAsString())
+                .contains("Supplier spending eligibility");
+    }
+
     /** Evidence retrieval is scope-checked, not only search (README 7.2). */
     @Test
     void sourceOutsideScopeIsRefused() throws Exception {

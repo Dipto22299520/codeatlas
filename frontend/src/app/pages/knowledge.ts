@@ -22,6 +22,8 @@ export class Knowledge {
 
   // Draft authoring form.
   readonly showForm = signal(false);
+  /** Empty = create a new rule; otherwise revise this existing meaning. */
+  readonly fMeaningId = signal('');
   readonly fName = signal('');
   readonly fStatement = signal('');
   readonly fReason = signal('');
@@ -30,6 +32,27 @@ export class Knowledge {
   readonly fSymbol = signal('');
 
   constructor() { this.reload(); }
+
+  /** Pre-fills the form to revise an existing statement. */
+  revise(row: MeaningRow): void {
+    this.fMeaningId.set(row.id);
+    this.fName.set(row.business_name);
+    this.fStatement.set(row.statement);
+    this.fReason.set('');
+    this.fSymbol.set('');
+    this.fPath.set('');
+    this.showForm.set(true);
+    this.message.set(null);
+  }
+
+  startNew(): void {
+    this.fMeaningId.set('');
+    this.fName.set('');
+    this.fStatement.set('');
+    this.fReason.set('');
+    this.fSymbol.set('');
+    this.showForm.set(!this.showForm());
+  }
 
   reload(): void {
     this.loading.set(true);
@@ -62,6 +85,9 @@ export class Knowledge {
     this.busy.set(true);
     this.error.set(null);
     this.api.draftMeaning({
+      // Supplying meaningId adds a version to that rule; omitting it creates
+      // a new one. Repairing a broken anchor must revise the existing rule.
+      meaningId: this.fMeaningId() || undefined,
       meaningType: 'rule',
       businessName: this.fName() || 'Untitled rule',
       statement: this.fStatement(),

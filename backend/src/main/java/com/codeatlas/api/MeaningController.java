@@ -37,7 +37,14 @@ public class MeaningController {
         this.audit = audit;
     }
 
-    /** All meanings with their current version and anchor resolution state. */
+    /**
+     * Meanings the caller is authorized to see.
+     *
+     * A statement is visible only when at least one of its anchors lies in the
+     * caller's asset scope, so curated knowledge honours the same boundary as
+     * retrieval (BR-71). Superseded versions are excluded: only the current
+     * version and any open drafts are listed.
+     */
     @GetMapping
     public List<Map<String, Object>> list() {
         Principal principal = scopeService.currentPrincipal();
@@ -52,7 +59,11 @@ public class MeaningController {
                 + "          AS broken_anchor_count "
                 + "FROM business_meaning m "
                 + "JOIN business_meaning_version v ON v.meaning_id = m.id "
-                + "ORDER BY m.business_name, v.version DESC");
+                + "WHERE v.status <> 'superseded' "
+                + "  AND EXISTS (SELECT 1 FROM meaning_anchor a "
+                + "              WHERE a.meaning_version_id = v.id AND a.asset_id = ANY(?)) "
+                + "ORDER BY m.business_name, v.version DESC",
+                (Object) principal.authorizedAssets().toArray(new String[0]));
     }
 
     @GetMapping("/{meaningId}/history")
@@ -72,7 +83,9 @@ public class MeaningController {
                 + "FROM meaning_anchor a "
                 + "JOIN business_meaning_version v ON v.id = a.meaning_version_id "
                 + "JOIN business_meaning m ON m.id = v.meaning_id "
-                + "WHERE a.asset_id = ANY(?) ORDER BY a.resolution_status, m.business_name",
+                + "WHERE a.asset_id = ANY(?) AND v.status <> 'superseded' "
+                + "  AND v.version = m.current_version "
+                + "ORDER BY a.resolution_status, m.business_name",
                 (Object) principal.authorizedAssets().toArray(new String[0]));
     }
 

@@ -9,7 +9,7 @@
         </p>
       </div>
       @if (canReview()) {
-        <button class="primary" type="button" (click)="showForm.set(!showForm())">
+        <button class="primary" type="button" (click)="startNew()">
           {{ showForm() ? 'Cancel' : 'New statement' }}
         </button>
       }
@@ -42,7 +42,12 @@
 
   @if (showForm()) {
     <section class="card">
-      <h2>New business statement</h2>
+      <h2>{{ fMeaningId() ? 'Revise statement' : 'New business statement' }}</h2>
+      @if (fMeaningId()) {
+        <p class="badge reviewed" style="display:inline-block">
+          New version of {{ fMeaningId() }}
+        </p>
+      }
       <p class="small muted">
         Saved as a draft. A reviewer must approve it before it is published as
         reviewed knowledge, and at least one source anchor is required.
@@ -114,6 +119,9 @@
                 <span class="badge inferred">AI suggestion — not reviewed</span>
               }
             </div>
+            @if (row.status === 'reviewed' && canReview()) {
+              <button type="button" (click)="revise(row)">Revise</button>
+            }
             @if (row.status === 'draft' && canReview()) {
               <div class="row">
                 <button type="button" class="primary" [disabled]="busy()"
