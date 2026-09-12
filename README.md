@@ -538,6 +538,15 @@ cd frontend && npm install && npx ng serve   # UI on :4200
 Sign in as `owner` / `owner-demo` and run a full refresh. Full instructions in
 [docs/SETUP.md](docs/SETUP.md); the demo walkthrough is in [docs/DEMO.md](docs/DEMO.md).
 
+### Documentation
+
+| Document | Purpose |
+|---|---|
+| **[docs/PROJECT-GUIDE.md](docs/PROJECT-GUIDE.md)** | **Start here.** Complete explanation of what was built, how it works, which file is responsible for each behaviour, the build journal of bugs found and fixed, and the design rationale. |
+| [docs/SETUP.md](docs/SETUP.md) | Prerequisites, startup, accounts, revision switching, troubleshooting. |
+| [docs/DEMO.md](docs/DEMO.md) | Timed five-minute demonstration script. |
+| [docs/REQUIREMENTS-STATUS.md](docs/REQUIREMENTS-STATUS.md) | Line-by-line status for every BR/NFR/CC requirement with evidence. |
+
 ### Measured results
 
 - **21 automated tests pass** (extraction, determinism, authorization, refresh
