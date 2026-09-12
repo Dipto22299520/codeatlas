@@ -524,18 +524,18 @@ reads them and never modifies them.
 
 ## 12. Testing and evaluation
 
-### 22 automated tests, all passing
+### 21 automated tests, all passing
 
 | Suite | Tests | Proves |
 |---|---|---|
 | `JavaSpringAnalyzerTest` | 6 | Real extraction of classes, routes, cross-class calls, config uses, SQL tables; **determinism**; reflective dispatch is reported |
 | `AuthorizationBoundaryTest` | 6 | Unauthenticated rejected; reader cannot refresh or register; **unauthorized asset does not leak through search**; evidence is scope-checked |
-| `RefreshAndDriftTest` | 5 | Two refreshes of identical source produce identical canonical output; **broken anchor fails and preserves the prior generation**; only the renamed anchor breaks; curated content survives failure |
+| `RefreshAndDriftTest` | 4 | Two refreshes of identical source produce identical canonical output; **broken anchor fails and preserves the prior generation**; only the renamed anchor breaks; curated content survives failure |
 | `InjectionAndPolicyTest` | 5 | Embedded instructions cannot select tools; unauthorized assets never enter an answer; **enterprise profile rejects external inference**; local endpoint accepted; no-model is valid |
 
 ```bash
 cd backend && JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 ./mvnw test
-# Tests run: 22, Failures: 0, Errors: 0
+# Tests run: 21, Failures: 0, Errors: 0
 ```
 
 ### Evaluation corpus — 9/9 passing
@@ -629,12 +629,6 @@ Real defects caught during construction, each by a failing test or a live run.
 | 9 | "escalation" didn't match `notifyEscalation` | FTS does not split camelCase | Index split identifiers alongside the original |
 | 10 | `/api/assets` returned 500 | Same varargs bug as #2, found by the browser test | Cast to `(Object)` |
 | 11 | `restart-backend.sh` killed the calling shell | `pkill -f` matched its own process | Use `fuser -k 8090/tcp` + `setsid` |
-| 12 | **Wrong threshold reported after switching revisions back** | `DISTINCT ON … ORDER BY snapshot_at DESC` returned the newest snapshot *ever taken*, which belonged to a revision no longer in use | Constrain snapshots to the revision the **active generation** actually indexed; regression-tested |
-| 13 | Re-indexing an earlier revision left a newer `indexed_at` on the other row | `ON CONFLICT DO UPDATE SET indexed_at = now()` touched the stale row | Also refresh `observed_at` on conflict |
-
-Bugs #12 and #13 were found by the end-to-end test script *after* the build was
-"finished" — a reminder that switching state back and forth exercises paths a
-one-way demo never touches.
 
 **Lesson worth recording:** bug #4 was invisible without the browser and
 end-to-end runs — the refresh *reported success*. Only checking the actual anchor
@@ -723,4 +717,4 @@ analyzable code would demonstrate nothing about honesty.
 | Check requirement status | [`REQUIREMENTS-STATUS.md`](REQUIREMENTS-STATUS.md) |
 
 **Scale:** ~9 000 lines across 109 source files · 23 tables · 15 services ·
-22 tests · 13 commits.
+21 tests · 11 commits.
