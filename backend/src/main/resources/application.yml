@@ -1,0 +1,51 @@
+spring:
+  application:
+    name: codeatlas
+  datasource:
+    url: ${CODEATLAS_DB_URL:jdbc:postgresql://localhost:55432/codeatlas}
+    username: ${CODEATLAS_DB_USER:codeatlas}
+    password: ${CODEATLAS_DB_PASSWORD:codeatlas}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+
+server:
+  port: ${CODEATLAS_PORT:8090}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+codeatlas:
+  # Deployment profile: demo | enterprise  (README section 1)
+  profile: ${CODEATLAS_PROFILE:demo}
+  platform-owner: ${CODEATLAS_PLATFORM_OWNER:Platform Owner (unset)}
+  refresh-cadence: ${CODEATLAS_REFRESH_CADENCE:on-demand}
+  # Registered source roots. Paths outside these roots are rejected.
+  source-roots:
+    - ${CODEATLAS_SOURCE_ROOT:../demo-estate}
+  model:
+    # Base URL of an OpenAI-compatible endpoint. Empty means no model
+    # configured: the platform still answers with deterministic evidence and
+    # marks narrative explanation unavailable.
+    base-url: ${CODEATLAS_MODEL_BASE_URL:}
+    api-key: ${CODEATLAS_MODEL_API_KEY:}
+    model: ${CODEATLAS_MODEL_NAME:}
+    # Hosts allowed to receive inference traffic in the enterprise profile.
+    local-hosts:
+      - localhost
+      - 127.0.0.1
+  agent:
+    max-tool-calls: 8
+    max-model-calls: 2
+    deadline-ms: 15000
