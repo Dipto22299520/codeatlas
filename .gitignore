@@ -4,3 +4,7 @@ dist/
 .angular/
 *.log
 .env
+
+# Any local env variant
+.env.*
+!.env.example
