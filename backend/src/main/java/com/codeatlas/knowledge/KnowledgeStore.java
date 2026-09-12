@@ -90,10 +90,15 @@ public class KnowledgeStore {
                 + "ON CONFLICT (id) DO NOTHING", batch);
     }
 
+    /** Scopes a stable identity to one generation, so re-extraction never collides. */
+    public static String scoped(String generationId, String stableId) {
+        return stableId + "@" + generationId;
+    }
+
     public void saveNodes(String generationId, Collection<ExtractedNode> nodes) {
         List<Object[]> batch = new ArrayList<>();
         for (ExtractedNode n : nodes) {
-            batch.add(new Object[]{n.id(), generationId, n.type().wire(), n.name(),
+            batch.add(new Object[]{scoped(generationId, n.id()), generationId, n.type().wire(), n.name(),
                     n.qualifiedName(), n.assetId(), n.locationId(), n.extractor(),
                     n.extractorVersion(), writeJson(n.attributes())});
         }
@@ -105,8 +110,9 @@ public class KnowledgeStore {
     public void saveEdges(String generationId, Collection<ExtractedEdge> edges) {
         List<Object[]> batch = new ArrayList<>();
         for (ExtractedEdge e : edges) {
-            batch.add(new Object[]{e.id(), generationId, e.type().wire(), e.sourceNodeId(),
-                    e.targetNodeId(), e.provenance().wire(), e.inferenceReason(),
+            batch.add(new Object[]{scoped(generationId, e.id()), generationId, e.type().wire(),
+                    scoped(generationId, e.sourceNodeId()),
+                    scoped(generationId, e.targetNodeId()), e.provenance().wire(), e.inferenceReason(),
                     e.evidenceIds().toArray(new String[0]), writeJson(e.attributes())});
         }
         jdbc.batchUpdate("INSERT INTO knowledge_edge (id, generation_id, edge_type, source_node_id, "

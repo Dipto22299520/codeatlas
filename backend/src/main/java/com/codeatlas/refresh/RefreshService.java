@@ -205,7 +205,8 @@ public class RefreshService {
 
     private void createApplicationNode(String generationId, AssetRegistry.Asset asset,
                                        ExtractedModel model) {
-        String appNodeId = Identities.nodeId(asset.id(), "application", asset.id());
+        String appNodeId = com.codeatlas.knowledge.KnowledgeStore.scoped(generationId,
+                Identities.nodeId(asset.id(), "application", asset.id()));
         store.jdbc().update("INSERT INTO knowledge_node (id, generation_id, node_type, name, "
                 + "qualified_name, asset_id, extractor, extractor_version, attributes) "
                 + "VALUES (?, ?, 'application', ?, ?, ?, ?, ?, ?::jsonb) ON CONFLICT (id) DO NOTHING",

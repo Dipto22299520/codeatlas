@@ -185,6 +185,7 @@ public class AnswerServiceHandlers {
         String[] assets = principal.authorizedAssets().toArray(new String[0]);
         List<Map<String, Object>> meaningHits = List.of();
         List<Map<String, Object>> sourceHits = List.of();
+        boolean relaxed = false;
 
         if (!"source".equals(mode)) {
             meaningHits = jdbc.queryForList(
@@ -206,6 +207,38 @@ public class AnswerServiceHandlers {
                     + "  AND n.search_vector @@ websearch_to_tsquery('english', ?) "
                     + "ORDER BY rank DESC LIMIT 15",
                     query, generationId, assets, query);
+        }
+
+        // websearch_to_tsquery requires every term. Business questions rarely use
+        // the exact indexed vocabulary, so retry matching any term before
+        // reporting nothing found.
+        if (meaningHits.isEmpty() && sourceHits.isEmpty()) {
+            String anyTerm = orQuery(query);
+            if (anyTerm != null) {
+                relaxed = true;
+                if (!"source".equals(mode)) {
+                    meaningHits = jdbc.queryForList(
+                            "SELECT v.id, v.meaning_id, m.business_name, v.statement, v.status, "
+                            + "       v.reviewer, v.reviewed_at, "
+                            + "       ts_rank(v.search_vector, to_tsquery('english', ?)) AS rank "
+                            + "FROM business_meaning_version v "
+                            + "JOIN business_meaning m ON m.id = v.meaning_id "
+                            + "WHERE v.status = 'reviewed' AND v.version = m.current_version "
+                            + "  AND v.search_vector @@ to_tsquery('english', ?) "
+                            + "ORDER BY rank DESC LIMIT 10", anyTerm, anyTerm);
+                }
+                if (!"meaning".equals(mode)) {
+                    sourceHits = jdbc.queryForList(
+                            "SELECT n.id, n.node_type, n.name, n.qualified_name, n.asset_id, "
+                            + "       n.location_id, "
+                            + "       ts_rank(n.search_vector, to_tsquery('english', ?)) AS rank "
+                            + "FROM knowledge_node n "
+                            + "WHERE n.generation_id = ? AND n.asset_id = ANY(?) "
+                            + "  AND n.search_vector @@ to_tsquery('english', ?) "
+                            + "ORDER BY rank DESC LIMIT 15",
+                            anyTerm, generationId, assets, anyTerm);
+                }
+            }
         }
 
         if (meaningHits.isEmpty() && sourceHits.isEmpty()) {
@@ -240,11 +273,26 @@ public class AnswerServiceHandlers {
                     "derived", locationId == null ? List.of() : List.of(locationId), List.of()));
         }
         builder.evidence(evidenceService.load(principal, locationIds));
+        if (relaxed) {
+            builder.unknown("No result matched every term, so results matching any term "
+                    + "are shown and may be less precise.");
+        }
         builder.unknown("Retrieval is keyword-based full-text search. "
                 + "No vector index is configured, so semantically similar wording "
                 + "that shares no terms may be missed.");
         builder.data(Map.of("meaning", meaningHits, "source", sourceHits));
         return builder.build();
+    }
+
+    /** Builds an OR tsquery from the query's alphanumeric words. */
+    private String orQuery(String query) {
+        List<String> terms = new ArrayList<>();
+        for (String word : query.split("\\W+")) {
+            if (word.length() >= 3) {
+                terms.add(word.toLowerCase(java.util.Locale.ROOT));
+            }
+        }
+        return terms.isEmpty() ? null : String.join(" | ", terms);
     }
 
     // ------------------------------------------------------------ detail
@@ -358,9 +406,12 @@ public class AnswerServiceHandlers {
     /** Approved snapshots only, with age. Never connects to a running system. */
     private Answer configuration(Principal principal, String key, String assetId) {
         String generationId = store.activeGenerationId();
+        // Snapshots are immutable and accumulate across refreshes, so return the
+        // most recent one per key: the value indexed at the current revision.
         StringBuilder sql = new StringBuilder(
-                "SELECT s.id, s.asset_id, s.config_key, s.value_type, s.value_text, s.source_path, "
-                + "       s.location_id, s.snapshot_at, "
+                "SELECT DISTINCT ON (s.asset_id, s.config_key) "
+                + "       s.id, s.asset_id, s.config_key, s.value_type, s.value_text, s.source_path, "
+                + "       s.location_id, s.snapshot_at, s.revision_id, "
                 + "       extract(epoch from (now() - s.snapshot_at)) AS age_seconds "
                 + "FROM reference_snapshot s WHERE s.asset_id = ANY(?)");
         List<Object> args = new ArrayList<>();
@@ -373,7 +424,7 @@ public class AnswerServiceHandlers {
             sql.append(" AND s.asset_id = ?");
             args.add(assetId);
         }
-        sql.append(" ORDER BY s.asset_id, s.config_key");
+        sql.append(" ORDER BY s.asset_id, s.config_key, s.snapshot_at DESC");
 
         List<Map<String, Object>> rows = jdbc.queryForList(sql.toString(), args.toArray());
         if (rows.isEmpty()) {
