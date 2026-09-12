@@ -148,7 +148,8 @@ public class JavaSpringAnalyzer {
 
             Map<String, Object> classAttributes = new LinkedHashMap<>();
             classAttributes.put("springRole", springRole(clazz));
-            classAttributes.put("snippet", clazz.getNameAsString());
+            classAttributes.put("snippet", clazz.getNameAsString()
+                    + " " + splitIdentifier(clazz.getNameAsString()));
             annotationValue(clazz, "RequestMapping")
                     .ifPresent(base -> classAttributes.put("basePath", base));
 
@@ -174,7 +175,10 @@ public class JavaSpringAnalyzer {
                 Map<String, Object> methodAttributes = new LinkedHashMap<>();
                 methodAttributes.put("returnType", method.getType().asString());
                 methodAttributes.put("parameters", method.getParameters().size());
-                methodAttributes.put("snippet", method.getDeclarationAsString(false, false, false));
+                methodAttributes.put("snippet",
+                        method.getDeclarationAsString(false, false, false)
+                        + " " + splitIdentifier(method.getNameAsString())
+                        + " " + splitIdentifier(clazz.getNameAsString()));
 
                 model.nodes().add(new ExtractedNode(methodNodeId,
                         com.codeatlas.knowledge.NodeType.METHOD,
@@ -582,6 +586,15 @@ public class JavaSpringAnalyzer {
     }
 
     // ----------------------------------------------------------- utilities
+
+    /**
+     * Splits a camelCase identifier into words so business vocabulary can match
+     * it through full-text search ("notifyEscalation" -> "notify Escalation").
+     */
+    static String splitIdentifier(String identifier) {
+        return identifier.replaceAll("([a-z0-9])([A-Z])", "$1 $2")
+                .replaceAll("([A-Z]+)([A-Z][a-z])", "$1 $2");
+    }
 
     private int line(Node node) {
         return node.getBegin().map(p -> p.line).orElse(0);

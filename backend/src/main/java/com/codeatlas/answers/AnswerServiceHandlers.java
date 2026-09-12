@@ -250,9 +250,16 @@ public class AnswerServiceHandlers {
                     .build();
         }
 
-        AnswerModels.Builder builder = base(generationId).status(Status.ANSWERED)
-                .summary("Found " + meaningHits.size() + " reviewed statement(s) and "
-                        + sourceHits.size() + " source item(s) for '" + query + "'.");
+        // A relaxed match found only some terms, so the result is partial: it may
+        // not be what was asked for, and the caller must be told that plainly.
+        AnswerModels.Builder builder = base(generationId)
+                .status(relaxed ? Status.PARTIAL : Status.ANSWERED)
+                .summary(relaxed
+                        ? "No item matches all of '" + query + "'. Showing "
+                          + (meaningHits.size() + sourceHits.size())
+                          + " partial match(es), which may not answer the question."
+                        : "Found " + meaningHits.size() + " reviewed statement(s) and "
+                          + sourceHits.size() + " source item(s) for '" + query + "'.");
 
         int index = 1;
         List<String> locationIds = new ArrayList<>();
@@ -282,6 +289,19 @@ public class AnswerServiceHandlers {
                 + "that shares no terms may be missed.");
         builder.data(Map.of("meaning", meaningHits, "source", sourceHits));
         return builder.build();
+    }
+
+    /** The longest meaningful word in a symptom, for LIKE matching. */
+    private String keyTerm(String symptom) {
+        String best = "";
+        for (String word : symptom.split("\\W+")) {
+            if (word.length() > best.length()
+                    && !List.of("what", "happens", "when", "does", "the", "if", "fails")
+                        .contains(word.toLowerCase(java.util.Locale.ROOT))) {
+                best = word;
+            }
+        }
+        return best;
     }
 
     /** Builds an OR tsquery from the query's alphanumeric words. */
@@ -809,13 +829,16 @@ public class AnswerServiceHandlers {
             return base(generationId).status(Status.UNKNOWN)
                     .summary("No symptom supplied.").unknown("symptom is required.").build();
         }
-        List<Map<String, Object>> candidates = jdbc.queryForList(
+        // A reported symptom is a sentence, not an exact phrase, so match any of
+        // its meaningful terms rather than requiring all of them.
+        String terms = orQuery(symptom);
+        List<Map<String, Object>> candidates = terms == null ? List.of() : jdbc.queryForList(
                 "SELECT n.id, n.qualified_name, n.asset_id, n.location_id, n.node_type, "
-                + "       ts_rank(n.search_vector, websearch_to_tsquery('english', ?)) AS rank "
+                + "       ts_rank(n.search_vector, to_tsquery('english', ?)) AS rank "
                 + "FROM knowledge_node n WHERE n.generation_id = ? AND n.asset_id = ANY(?) "
-                + "  AND n.search_vector @@ websearch_to_tsquery('english', ?) "
+                + "  AND n.search_vector @@ to_tsquery('english', ?) "
                 + "ORDER BY rank DESC LIMIT 10",
-                symptom, generationId, principal.authorizedAssets().toArray(new String[0]), symptom);
+                terms, generationId, principal.authorizedAssets().toArray(new String[0]), terms);
 
         List<Map<String, Object>> failureStages = jdbc.queryForList(
                 "SELECT s.* FROM process_stage s WHERE s.stage_kind IN ('failure','check') "
@@ -823,7 +846,8 @@ public class AnswerServiceHandlers {
                 + "AND (s.name ILIKE ? OR s.description ILIKE ? OR s.branch_condition ILIKE ?) "
                 + "ORDER BY s.stage_order",
                 principal.authorizedAssets().toArray(new String[0]),
-                "%" + symptom + "%", "%" + symptom + "%", "%" + symptom + "%");
+                "%" + keyTerm(symptom) + "%", "%" + keyTerm(symptom) + "%",
+                "%" + keyTerm(symptom) + "%");
 
         if (candidates.isEmpty() && failureStages.isEmpty()) {
             return base(generationId).status(Status.UNKNOWN)

@@ -128,35 +128,43 @@ public class AnswerOrchestrator {
     public Plan plan(String question) {
         String q = question == null ? "" : question.toLowerCase(Locale.ROOT);
 
-        if (contains(q, "what else", "affected", "impact of", "if we change", "if the", "change the")) {
-            return new Plan("change_impact",
-                    map("proposal", question),
-                    "asks what a proposed change affects");
-        }
-        if (contains(q, "how does", "how do", "walk through", "end to end", "process work", "steps")) {
-            return new Plan("describe_process",
-                    map("processId", "proc-purchase-approval"),
-                    "asks how a process works");
-        }
-        if (contains(q, "validat", "check", "rule enforce", "enforced")) {
-            return new Plan("checks",
-                    map("processId", "proc-purchase-approval"),
-                    "asks which validations apply");
-        }
-        if (contains(q, "fail", "error", "broke", "wrong", "rejected because")) {
-            return new Plan("failure_trace", map("symptom", question),
-                    "reports a failure symptom");
-        }
-        if (contains(q, "write", "store", "save", "change data", "effect")) {
-            return new Plan("effects", map("processId", "proc-purchase-approval"),
-                    "asks what data changes");
-        }
-        if (contains(q, "where should", "where do i add", "place", "add a check")) {
+        // Order matters: the most specific intents are matched first, because
+        // generic words such as "change" or "check" appear in many questions.
+
+        if (contains(q, "where should", "where do i add", "where would i add",
+                "where to add", "best place", "placement")) {
             return new Plan("placement", map("intent", question,
                     "processId", "proc-purchase-approval"),
                     "asks where a change belongs");
         }
-        if (contains(q, "threshold", "limit", "configured", "configuration", "value of", "set to")) {
+        if (contains(q, "what happens if", "fails", "failure", "error", "broke",
+                "went wrong", "rejected because")) {
+            return new Plan("failure_trace", map("symptom", question),
+                    "reports or asks about a failure");
+        }
+        if (contains(q, "what data", "which data", "what is written", "what does it write",
+                "what is stored", "what gets stored", "data change", "state change")) {
+            return new Plan("effects", map("processId", "proc-purchase-approval"),
+                    "asks what data changes");
+        }
+        if (contains(q, "what else", "affected", "impact of", "if we change",
+                "if the", "knock-on")) {
+            return new Plan("change_impact", map("proposal", question),
+                    "asks what a proposed change affects");
+        }
+        if (contains(q, "how does", "how do", "walk through", "end to end",
+                "process work", "steps")) {
+            return new Plan("describe_process",
+                    map("processId", "proc-purchase-approval"),
+                    "asks how a process works");
+        }
+        if (contains(q, "which validation", "what validation", "what checks",
+                "which checks", "rule enforce", "enforced", "validated")) {
+            return new Plan("checks", map("processId", "proc-purchase-approval"),
+                    "asks which validations apply");
+        }
+        if (contains(q, "threshold", "limit", "configured", "configuration",
+                "value of", "set to")) {
             return new Plan("configuration", configurationInput(question),
                     "asks for a configured value");
         }

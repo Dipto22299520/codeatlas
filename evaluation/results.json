@@ -1,0 +1,210 @@
+[
+  {
+    "id": "q1-process-description",
+    "question": "How does purchase approval work?",
+    "category": "process description",
+    "expectedService": "describe_process",
+    "expectedEvidence": [
+      "PurchaseRequestService.java",
+      "ApprovalService.java"
+    ],
+    "expectedClaims": [
+      "justification",
+      "threshold",
+      "eligibility"
+    ],
+    "allowedUncertainty": "Runtime order and concurrency must be flagged as not established.",
+    "verdict": "PASS",
+    "status": "answered",
+    "claims": 12,
+    "evidence": 8,
+    "latencyMs": 2552,
+    "evidenceMatch": true,
+    "claimMatch": true,
+    "traceable": true
+  },
+  {
+    "id": "q2-threshold-lookup",
+    "question": "What is the configured approval threshold?",
+    "category": "threshold lookup",
+    "expectedService": "configuration",
+    "expectedEvidence": [
+      "application.yml"
+    ],
+    "expectedClaims": [
+      "50000"
+    ],
+    "allowedUncertainty": "Snapshot age and possible drift from the running system must be stated.",
+    "verdict": "PASS",
+    "status": "answered",
+    "claims": 1,
+    "evidence": 1,
+    "latencyMs": 658,
+    "evidenceMatch": true,
+    "claimMatch": true,
+    "traceable": true
+  },
+  {
+    "id": "q3-enforcement-location",
+    "question": "Where is the approval threshold enforced?",
+    "category": "enforcement location",
+    "expectedService": "change_impact",
+    "expectedEvidence": [
+      "ApprovalService.java"
+    ],
+    "expectedClaims": [
+      "ApprovalService"
+    ],
+    "allowedUncertainty": "None; the enforcement site is statically resolvable.",
+    "verdict": "PASS",
+    "status": "answered",
+    "claims": 4,
+    "evidence": 3,
+    "latencyMs": 698,
+    "evidenceMatch": true,
+    "claimMatch": true,
+    "traceable": true
+  },
+  {
+    "id": "q4-failure-cause",
+    "question": "What happens if the escalation notification fails?",
+    "category": "failure cause candidate",
+    "expectedService": "failure_trace",
+    "expectedEvidence": [
+      "AuditNotifier.java"
+    ],
+    "expectedClaims": [
+      "escalation"
+    ],
+    "allowedUncertainty": "Must state that the handler is dispatched reflectively and cannot be resolved statically.",
+    "verdict": "PASS",
+    "status": "partial",
+    "claims": 2,
+    "evidence": 1,
+    "latencyMs": 808,
+    "evidenceMatch": true,
+    "claimMatch": true,
+    "traceable": true
+  },
+  {
+    "id": "q5-effects",
+    "question": "What data does the approval process change?",
+    "category": "effect",
+    "expectedService": "effects",
+    "expectedEvidence": [
+      "ApprovalRepository.java",
+      "SubmissionRepository.java"
+    ],
+    "expectedClaims": [
+      "approval_decision",
+      "purchase_submission"
+    ],
+    "allowedUncertainty": "Dynamically built SQL is out of scope and must be declared.",
+    "verdict": "PASS",
+    "status": "answered",
+    "claims": 2,
+    "evidence": 2,
+    "latencyMs": 718,
+    "evidenceMatch": true,
+    "claimMatch": true,
+    "traceable": true
+  },
+  {
+    "id": "q6-handover",
+    "question": "How does the portal hand a request to the approval service?",
+    "category": "cross-application handover",
+    "expectedService": "search",
+    "expectedEvidence": [
+      "PurchaseRequestService.java"
+    ],
+    "expectedClaims": [
+      "/api/approvals/decide"
+    ],
+    "allowedUncertainty": "The cross-application link is inferred from route equality and must be labelled inferred.",
+    "verdict": "PASS",
+    "status": "answered",
+    "claims": 12,
+    "evidence": 8,
+    "latencyMs": 686,
+    "evidenceMatch": true,
+    "claimMatch": true,
+    "traceable": true
+  },
+  {
+    "id": "q7-change-impact",
+    "question": "If the purchase approval threshold changes, what else is affected?",
+    "category": "change impact",
+    "expectedService": "change_impact",
+    "expectedEvidence": [
+      "ApprovalService.java",
+      "application.yml"
+    ],
+    "expectedClaims": [
+      "threshold",
+      "escalated"
+    ],
+    "allowedUncertainty": "Runtime dispatch and out-of-scope assets must be listed as gaps.",
+    "verdict": "PASS",
+    "status": "answered",
+    "claims": 9,
+    "evidence": 7,
+    "latencyMs": 1520,
+    "evidenceMatch": true,
+    "claimMatch": true,
+    "traceable": true
+  },
+  {
+    "id": "q8-placement",
+    "question": "Where should I add a supplier contract check?",
+    "category": "placement recommendation",
+    "expectedService": "placement",
+    "expectedEvidence": [
+      "ApprovalService.java"
+    ],
+    "expectedClaims": [
+      "Recommendation"
+    ],
+    "allowedUncertainty": "The recommendation must be labelled inferred guidance, and no patch may be produced.",
+    "verdict": "PASS",
+    "status": "answered",
+    "claims": 5,
+    "evidence": 3,
+    "latencyMs": 921,
+    "evidenceMatch": true,
+    "claimMatch": true,
+    "traceable": true
+  },
+  {
+    "id": "q9-unsupported",
+    "question": "Is there a currency conversion rule?",
+    "category": "unsupported behaviour",
+    "expectedService": "search",
+    "expectedEvidence": [],
+    "expectedClaims": [],
+    "expectedStatus": "unknown",
+    "allowedUncertainty": "Correct answer is unknown with a statement of what evidence would help.",
+    "verdict": "PASS",
+    "status": "partial",
+    "claims": 2,
+    "evidence": 2,
+    "latencyMs": 614,
+    "evidenceMatch": true,
+    "claimMatch": true,
+    "traceable": true
+  },
+  {
+    "id": "q10-broken-anchor",
+    "question": "What is the configured approval threshold?",
+    "category": "stale / broken-anchor behaviour",
+    "sourceRevision": "B-before-repair",
+    "expectedService": "configuration",
+    "expectedEvidence": [
+      "application.yml"
+    ],
+    "expectedClaims": [],
+    "expectedStatus": "answered-from-prior-generation",
+    "allowedUncertainty": "After the revision B refresh fails, the prior generation must still be served and the failure must be visible in Refresh & Trust.",
+    "verdict": "MANUAL",
+    "note": "Requires switching to revision B; covered by RefreshAndDriftTest."
+  }
+]

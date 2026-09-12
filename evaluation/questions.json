@@ -1,0 +1,100 @@
+{
+  "corpus": "CodeAtlas evaluation corpus",
+  "sourceRevision": "A",
+  "note": "Expected evidence names the file that must be cited. Uncertainty is expected where stated.",
+  "questions": [
+    {
+      "id": "q1-process-description",
+      "question": "How does purchase approval work?",
+      "category": "process description",
+      "expectedService": "describe_process",
+      "expectedEvidence": ["PurchaseRequestService.java", "ApprovalService.java"],
+      "expectedClaims": ["justification", "threshold", "eligibility"],
+      "allowedUncertainty": "Runtime order and concurrency must be flagged as not established."
+    },
+    {
+      "id": "q2-threshold-lookup",
+      "question": "What is the configured approval threshold?",
+      "category": "threshold lookup",
+      "expectedService": "configuration",
+      "expectedEvidence": ["application.yml"],
+      "expectedClaims": ["50000"],
+      "allowedUncertainty": "Snapshot age and possible drift from the running system must be stated."
+    },
+    {
+      "id": "q3-enforcement-location",
+      "question": "Where is the approval threshold enforced?",
+      "category": "enforcement location",
+      "expectedService": "change_impact",
+      "expectedEvidence": ["ApprovalService.java"],
+      "expectedClaims": ["ApprovalService"],
+      "allowedUncertainty": "None; the enforcement site is statically resolvable."
+    },
+    {
+      "id": "q4-failure-cause",
+      "question": "What happens if the escalation notification fails?",
+      "category": "failure cause candidate",
+      "expectedService": "failure_trace",
+      "expectedEvidence": ["AuditNotifier.java"],
+      "expectedClaims": ["escalation"],
+      "allowedUncertainty": "Must state that the handler is dispatched reflectively and cannot be resolved statically."
+    },
+    {
+      "id": "q5-effects",
+      "question": "What data does the approval process change?",
+      "category": "effect",
+      "expectedService": "effects",
+      "expectedEvidence": ["ApprovalRepository.java", "SubmissionRepository.java"],
+      "expectedClaims": ["approval_decision", "purchase_submission"],
+      "allowedUncertainty": "Dynamically built SQL is out of scope and must be declared."
+    },
+    {
+      "id": "q6-handover",
+      "question": "How does the portal hand a request to the approval service?",
+      "category": "cross-application handover",
+      "expectedService": "search",
+      "expectedEvidence": ["PurchaseRequestService.java"],
+      "expectedClaims": ["/api/approvals/decide"],
+      "allowedUncertainty": "The cross-application link is inferred from route equality and must be labelled inferred."
+    },
+    {
+      "id": "q7-change-impact",
+      "question": "If the purchase approval threshold changes, what else is affected?",
+      "category": "change impact",
+      "expectedService": "change_impact",
+      "expectedEvidence": ["ApprovalService.java", "application.yml"],
+      "expectedClaims": ["threshold", "escalated"],
+      "allowedUncertainty": "Runtime dispatch and out-of-scope assets must be listed as gaps."
+    },
+    {
+      "id": "q8-placement",
+      "question": "Where should I add a supplier contract check?",
+      "category": "placement recommendation",
+      "expectedService": "placement",
+      "expectedEvidence": ["ApprovalService.java"],
+      "expectedClaims": ["Recommendation"],
+      "allowedUncertainty": "The recommendation must be labelled inferred guidance, and no patch may be produced."
+    },
+    {
+      "id": "q9-unsupported",
+      "question": "Is there a currency conversion rule?",
+      "category": "unsupported behaviour",
+      "expectedService": "search",
+      "expectedEvidence": [],
+      "expectedClaims": [],
+      "expectedStatus": "unknown",
+      "allowedUncertainty": "Correct answer is unknown with a statement of what evidence would help."
+    },
+    {
+      "id": "q10-broken-anchor",
+      "question": "What is the configured approval threshold?",
+      "category": "stale / broken-anchor behaviour",
+      "sourceRevision": "B-before-repair",
+      "expectedService": "configuration",
+      "expectedEvidence": ["application.yml"],
+      "expectedClaims": [],
+      "expectedStatus": "answered-from-prior-generation",
+      "allowedUncertainty": "After the revision B refresh fails, the prior generation must still be served and the failure must be visible in Refresh & Trust."
+    }
+  ]
+}
