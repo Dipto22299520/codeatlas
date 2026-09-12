@@ -426,14 +426,21 @@ public class AnswerServiceHandlers {
     /** Approved snapshots only, with age. Never connects to a running system. */
     private Answer configuration(Principal principal, String key, String assetId) {
         String generationId = store.activeGenerationId();
-        // Snapshots are immutable and accumulate across refreshes, so return the
-        // most recent one per key: the value indexed at the current revision.
+        // Snapshots are immutable and accumulate across refreshes. Return the one
+        // belonging to the revision the ACTIVE generation actually indexed, not
+        // merely the most recently taken: after switching back to an earlier
+        // revision, the newest snapshot belongs to a revision no longer in use.
         StringBuilder sql = new StringBuilder(
                 "SELECT DISTINCT ON (s.asset_id, s.config_key) "
                 + "       s.id, s.asset_id, s.config_key, s.value_type, s.value_text, s.source_path, "
                 + "       s.location_id, s.snapshot_at, s.revision_id, "
                 + "       extract(epoch from (now() - s.snapshot_at)) AS age_seconds "
-                + "FROM reference_snapshot s WHERE s.asset_id = ANY(?)");
+                + "FROM reference_snapshot s "
+                + "WHERE s.asset_id = ANY(?) "
+                + "  AND s.revision_id IN (SELECT DISTINCT l.revision_id "
+                + "        FROM source_location l JOIN knowledge_node n ON n.location_id = l.id "
+                + "        WHERE n.generation_id = (SELECT id FROM knowledge_generation "
+                + "                                 WHERE state = 'active' LIMIT 1))");
         List<Object> args = new ArrayList<>();
         args.add(principal.authorizedAssets().toArray(new String[0]));
         if (key != null && !key.isBlank()) {

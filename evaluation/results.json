@@ -18,7 +18,7 @@
     "status": "answered",
     "claims": 12,
     "evidence": 8,
-    "latencyMs": 1715,
+    "latencyMs": 2066,
     "evidenceMatch": true,
     "claimMatch": true,
     "traceable": true
@@ -39,7 +39,7 @@
     "status": "answered",
     "claims": 1,
     "evidence": 1,
-    "latencyMs": 639,
+    "latencyMs": 589,
     "evidenceMatch": true,
     "claimMatch": true,
     "traceable": true
@@ -60,7 +60,7 @@
     "status": "answered",
     "claims": 4,
     "evidence": 3,
-    "latencyMs": 1032,
+    "latencyMs": 693,
     "evidenceMatch": true,
     "claimMatch": true,
     "traceable": true
@@ -81,7 +81,7 @@
     "status": "partial",
     "claims": 2,
     "evidence": 1,
-    "latencyMs": 921,
+    "latencyMs": 1890,
     "evidenceMatch": true,
     "claimMatch": true,
     "traceable": true
@@ -104,7 +104,7 @@
     "status": "answered",
     "claims": 2,
     "evidence": 2,
-    "latencyMs": 682,
+    "latencyMs": 817,
     "evidenceMatch": true,
     "claimMatch": true,
     "traceable": true
@@ -125,7 +125,7 @@
     "status": "answered",
     "claims": 12,
     "evidence": 8,
-    "latencyMs": 668,
+    "latencyMs": 657,
     "evidenceMatch": true,
     "claimMatch": true,
     "traceable": true
@@ -148,7 +148,7 @@
     "status": "answered",
     "claims": 9,
     "evidence": 7,
-    "latencyMs": 862,
+    "latencyMs": 2623,
     "evidenceMatch": true,
     "claimMatch": true,
     "traceable": true
@@ -169,7 +169,7 @@
     "status": "answered",
     "claims": 5,
     "evidence": 3,
-    "latencyMs": 906,
+    "latencyMs": 2045,
     "evidenceMatch": true,
     "claimMatch": true,
     "traceable": true
@@ -187,7 +187,7 @@
     "status": "partial",
     "claims": 2,
     "evidence": 2,
-    "latencyMs": 597,
+    "latencyMs": 619,
     "evidenceMatch": true,
     "claimMatch": true,
     "traceable": true

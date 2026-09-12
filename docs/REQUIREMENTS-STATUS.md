@@ -9,7 +9,7 @@ functionality.** Where something is partial, the limit is stated.
 
 Evidence keys:
 `ANALYZER` = JavaSpringAnalyzerTest · `AUTH` = AuthorizationBoundaryTest ·
-`DRIFT` = RefreshAndDriftTest · `POLICY` = InjectionAndPolicyTest ·
+`DRIFT` = RefreshAndDriftTest (5 tests) · `POLICY` = InjectionAndPolicyTest ·
 `EVAL` = evaluation/results.json · `MANUAL` = exercised against the running system.
 
 ## CAP-1 — Estate Registration

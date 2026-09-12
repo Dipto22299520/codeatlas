@@ -76,7 +76,8 @@ public class KnowledgeStore {
                              String manifestHash, Instant observedAt) {
         jdbc.update("INSERT INTO source_revision (id, asset_id, revision_label, content_digest, "
                 + "manifest_hash, observed_at) VALUES (?, ?, ?, ?, ?, ?) "
-                + "ON CONFLICT (asset_id, content_digest) DO UPDATE SET indexed_at = now()",
+                + "ON CONFLICT (asset_id, content_digest) DO UPDATE "
+                + "SET indexed_at = now(), observed_at = EXCLUDED.observed_at",
                 id, assetId, label, digest, manifestHash, Timestamp.from(observedAt));
     }
 

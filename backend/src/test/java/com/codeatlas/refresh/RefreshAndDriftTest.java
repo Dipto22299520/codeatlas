@@ -138,6 +138,36 @@ class RefreshAndDriftTest {
         assertThat(processCount).isGreaterThan(0);
     }
 
+    /**
+     * A configuration answer must report the value from the revision the ACTIVE
+     * generation indexed - not simply the most recently taken snapshot. After
+     * switching revisions and back, a newer snapshot exists for a revision that
+     * is no longer in use, and returning it would report the wrong value.
+     */
+    @Test
+    @Order(5)
+    void configurationReportsTheActiveRevisionValue() {
+        pointAt("B");
+        refreshService.refresh("full", null, "test");   // fails: anchor breaks
+        pointAt("A");
+        RefreshService.RefreshResult good = refreshService.refresh("full", null, "test");
+        assertThat(good.state()).isEqualTo("succeeded");
+
+        String value = jdbc.queryForList(
+                "SELECT DISTINCT ON (s.asset_id, s.config_key) s.value_text "
+                + "FROM reference_snapshot s "
+                + "WHERE s.config_key = 'approval.threshold.amount' "
+                + "  AND s.revision_id IN (SELECT DISTINCT l.revision_id "
+                + "        FROM source_location l JOIN knowledge_node n ON n.location_id = l.id "
+                + "        WHERE n.generation_id = (SELECT id FROM knowledge_generation "
+                + "                                 WHERE state = 'active' LIMIT 1)) "
+                + "ORDER BY s.asset_id, s.config_key, s.snapshot_at DESC",
+                String.class).stream().findFirst().orElse(null);
+
+        // Revision A's threshold, even though revision B's snapshot is newer.
+        assertThat(value).isEqualTo("50000");
+    }
+
     private String activeGeneration() {
         return jdbc.queryForList(
                 "SELECT id FROM knowledge_generation WHERE state = 'active'", String.class)
