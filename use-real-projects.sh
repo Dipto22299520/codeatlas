@@ -5,8 +5,9 @@ cd "$(dirname "$0")"
 PGPASSWORD=codeatlas psql -h localhost -p 55432 -U codeatlas -d codeatlas -q <<'SQL'
 UPDATE asset SET scope_status='excluded'
   WHERE id IN ('purchase-portal','approval-service','payment-service','supplier-ui');
+-- Everything that is not a demo fixture asset comes into scope.
 UPDATE asset SET scope_status='in_scope'
-  WHERE id IN ('flowable-rest','bpa-backend','grpc-server','kafka-quarkus');
+  WHERE id NOT IN ('purchase-portal','approval-service','payment-service','supplier-ui');
 -- Demo anchors point at com.example.* symbols absent from real code.
 UPDATE business_meaning_version SET status='superseded' WHERE status='reviewed';
 SQL

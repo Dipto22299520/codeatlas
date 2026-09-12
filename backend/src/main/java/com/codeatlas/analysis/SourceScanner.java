@@ -44,6 +44,15 @@ public final class SourceScanner {
             @Override
             public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
                 String name = dir.getFileName() == null ? "" : dir.getFileName().toString();
+                // Test sources describe how code is exercised, not how the
+                // described system behaves, so they are excluded with a reason.
+                if (dir.endsWith(Path.of("src", "test"))) {
+                    exclusions.add(new CoverageFinding(assetId, CoverageFinding.EXCLUDED_FILE,
+                            Identities.normalizePath(assetRoot.relativize(dir).toString()), null,
+                            "Excluded test sources: they describe test scenarios rather than "
+                            + "the behaviour of the described system."));
+                    return FileVisitResult.SKIP_SUBTREE;
+                }
                 if (!dir.equals(assetRoot) && EXCLUDED_DIRECTORIES.contains(name)) {
                     exclusions.add(new CoverageFinding(assetId, CoverageFinding.EXCLUDED_FILE,
                             Identities.normalizePath(assetRoot.relativize(dir).toString()), null,
