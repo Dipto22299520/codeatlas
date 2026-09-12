@@ -1,0 +1,10 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: purchase-portal
+
+approval:
+  service:
+    base-url: http://approval-service:8081

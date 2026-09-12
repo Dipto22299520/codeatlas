@@ -1,0 +1,20 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: approval-service
+
+approval:
+  threshold:
+    amount: 25000
+  auto-approve:
+    enabled: true
+
+payment:
+  service:
+    base-url: http://payment-service:8082
+
+audit:
+  notifier:
+    handler-class: com.example.approval.notify.EmailEscalationHandler
