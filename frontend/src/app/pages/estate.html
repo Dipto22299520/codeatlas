@@ -1,0 +1,69 @@
+<div class="stack" style="max-width:1100px">
+  <section class="card">
+    <h1>Estate</h1>
+    <p class="small muted" style="margin-bottom:0">
+      Every registered asset, its owner, the analysis actually supported for it,
+      and what could not be interpreted. Unsupported assets stay registered with
+      a visible coverage gap rather than being hidden.
+    </p>
+  </section>
+
+  @if (loading()) { <section class="card"><p class="muted">Loading estate…</p></section> }
+  @if (error()) { <section class="card" role="alert"><span class="badge danger">{{ error() }}</span></section> }
+
+  @if (!loading() && !assets().length) {
+    <section class="card">
+      <span class="badge unknown">Empty estate</span>
+      <p>No assets are registered in your authorized scope.</p>
+    </section>
+  }
+
+  @for (asset of assets(); track asset.id) {
+    <section class="card">
+      <div class="spread">
+        <div>
+          <h2 style="margin:0">{{ asset.business_name }}</h2>
+          <p class="small muted mono" style="margin:2px 0 0">{{ asset.id }}</p>
+        </div>
+        <div class="row">
+          @if (isSupported(asset)) {
+            <span class="badge derived">{{ asset.language }} · analyzed</span>
+          } @else {
+            <span class="badge inferred">{{ asset.language }} · no analyzer</span>
+          }
+          <span class="badge unknown">{{ asset.sensitivity }}</span>
+        </div>
+      </div>
+
+      <div class="scroll-x" style="margin-top:10px">
+        <table>
+          <tbody>
+            <tr><th style="width:160px">Owner</th><td>{{ asset.owner }}</td></tr>
+            <tr><th>Role</th><td>{{ asset.role }}</td></tr>
+            <tr><th>Source scope</th><td class="mono small">{{ asset.source_locator }}</td></tr>
+            <tr><th>Scope status</th><td>{{ asset.scope_status }}</td></tr>
+            <tr><th>Last indexed</th>
+              <td>{{ asset.last_indexed ? (asset.last_indexed | date:'medium') : 'never indexed' }}</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      @if (findingsFor(asset.id).length) {
+        <h3 style="margin-top:12px">Coverage gaps ({{ findingsFor(asset.id).length }})</h3>
+        <ul class="small muted" style="margin:0; padding-left:20px">
+          @for (finding of findingsFor(asset.id); track finding.id) {
+            <li>
+              <strong>{{ finding.finding_type }}</strong>
+              @if (finding.path) { · <span class="mono">{{ finding.path }}</span> }
+              — {{ finding.detail }}
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="small muted" style="margin:10px 0 0">
+          No uninterpreted constructs recorded for this asset.
+        </p>
+      }
+    </section>
+  }
+</div>

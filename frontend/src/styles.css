@@ -1,0 +1,128 @@
+/* CodeAtlas design tokens. Optimized for a laptop screen (README section 10). */
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --surface-2: #f0f2f5;
+  --border: #d6dae0;
+  --text: #161a1f;
+  --text-muted: #5a6472;
+  --accent: #1f5fbf;
+  --accent-soft: #e8f0fc;
+
+  /* Provenance colours are also distinguished by label and icon, never by
+     colour alone, so the distinction survives colour-blind viewing. */
+  --derived: #1b6b3a;
+  --derived-bg: #e4f4ea;
+  --reviewed: #1f5fbf;
+  --reviewed-bg: #e8f0fc;
+  --inferred: #8a5a00;
+  --inferred-bg: #fbf0da;
+  --unknown: #6b6b6b;
+  --unknown-bg: #eeeeee;
+  --danger: #a52020;
+  --danger-bg: #fbe9e9;
+
+  --radius: 8px;
+  --shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px rgba(16, 24, 40, 0.1);
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+        'Helvetica Neue', Arial, sans-serif;
+}
+
+h1, h2, h3, h4 { margin: 0 0 8px; line-height: 1.25; }
+h1 { font-size: 20px; }
+h2 { font-size: 17px; }
+h3 { font-size: 15px; }
+
+code, pre, .mono {
+  font-family: 'SF Mono', SFMono-Regular, ui-monospace, Menlo, Consolas, monospace;
+  font-size: 12.5px;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  padding: 7px 13px;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+button:hover:not(:disabled) { background: var(--surface-2); }
+button:disabled { opacity: 0.55; cursor: not-allowed; }
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+button.primary:hover:not(:disabled) { background: #1a51a4; }
+
+/* Visible keyboard focus everywhere (README section 10 accessibility). */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+input, textarea, select {
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  width: 100%;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+}
+
+.muted { color: var(--text-muted); }
+.small { font-size: 12.5px; }
+
+/* Provenance badges carry a text label, not colour alone. */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 999px;
+  padding: 2px 9px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+}
+.badge.derived  { background: var(--derived-bg);  color: var(--derived);  border-color: #b9e0c8; }
+.badge.reviewed { background: var(--reviewed-bg); color: var(--reviewed); border-color: #bcd4f5; }
+.badge.inferred { background: var(--inferred-bg); color: var(--inferred); border-color: #e8d09a; }
+.badge.unknown  { background: var(--unknown-bg);  color: var(--unknown);  border-color: #d5d5d5; }
+.badge.danger   { background: var(--danger-bg);   color: var(--danger);   border-color: #efc0c0; }
+
+.row { display: flex; gap: 10px; align-items: center; }
+.spread { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.stack { display: flex; flex-direction: column; gap: 12px; }
+
+table { width: 100%; border-collapse: collapse; }
+th, td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.3px; color: var(--text-muted); }
+
+.scroll-x { overflow-x: auto; }

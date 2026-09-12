@@ -1,0 +1,72 @@
+.workspace { display: flex; flex-direction: column; gap: 14px; max-width: 1000px; }
+.ask-form { display: flex; gap: 8px; margin: 12px 0 10px; }
+.ask-form input { flex: 1; }
+.examples { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  font-size: 12.5px; padding: 5px 10px; border-radius: 999px;
+  background: var(--surface-2); color: var(--text-muted);
+}
+.chip:hover:not(:disabled) { background: var(--accent-soft); color: var(--accent); }
+
+.spinner {
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid var(--border); border-top-color: var(--accent);
+  animation: spin 0.8s linear infinite; display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+
+.summary { font-size: 15px; line-height: 1.6; margin: 0; }
+.progress-card ol { margin: 6px 0 0; padding-left: 20px; }
+.progress-list li { margin-bottom: 3px; font-size: 13px; color: var(--text-muted); }
+.progress-list strong { color: var(--text); text-transform: capitalize; }
+
+.claims { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.claim { border-left: 3px solid var(--border); padding-left: 12px; }
+.claim-head { display: flex; gap: 8px; align-items: flex-start; }
+.claim-text { flex: 1; }
+.limitations { margin: 6px 0 0; padding-left: 18px; color: var(--text-muted); }
+.evidence-links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.evidence-link {
+  font-family: 'SF Mono', ui-monospace, Menlo, Consolas, monospace;
+  font-size: 12px; padding: 3px 8px; background: var(--surface-2);
+  border-color: transparent; color: var(--accent);
+}
+.evidence-link:hover { background: var(--accent-soft); border-color: var(--accent); }
+.rev { color: var(--text-muted); margin-left: 4px; }
+
+.paths { display: flex; flex-direction: column; gap: 10px; padding: 8px 0; }
+.path-row { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.node {
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 6px; padding: 5px 9px;
+  font-family: 'SF Mono', ui-monospace, Menlo, Consolas, monospace; font-size: 12px;
+}
+.edge { display: inline-flex; flex-direction: column; align-items: center; min-width: 76px; }
+.edge-label { font-size: 10.5px; color: var(--text-muted); }
+.edge-line { width: 100%; height: 0; border-top: 2px solid var(--border); }
+/* Inferred links are visibly different (README section 10). */
+.inferred-edge .edge-line { border-top: 2px dashed var(--inferred); }
+.inferred-edge .edge-label { color: var(--inferred); font-weight: 600; }
+
+.gaps ul { margin: 6px 0 0; padding-left: 20px; }
+.gaps li { margin-bottom: 4px; color: var(--text-muted); }
+
+.drawer-backdrop {
+  position: fixed; inset: 0; background: rgba(16, 24, 40, 0.32); z-index: 30;
+}
+.drawer {
+  position: fixed; top: 0; right: 0; bottom: 0; width: min(660px, 94vw);
+  background: var(--surface); border-left: 1px solid var(--border);
+  box-shadow: -4px 0 16px rgba(16, 24, 40, 0.12);
+  z-index: 31; padding: 16px; overflow-y: auto;
+}
+.drawer-head { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.code {
+  background: #1b1f27; color: #e6e9ef; border-radius: 8px;
+  padding: 12px; overflow-x: auto; font-size: 12.5px; line-height: 1.55; margin: 0 0 10px;
+}
+.ln {
+  display: inline-block; width: 38px; color: #6b7686;
+  user-select: none; text-align: right; padding-right: 12px;
+}

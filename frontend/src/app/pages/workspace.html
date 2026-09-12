@@ -1,0 +1,230 @@
+<div class="workspace">
+  <section class="card ask-card">
+    <h1>Ask about the registered estate</h1>
+    <p class="small muted">
+      Answers are composed from extracted structure and reviewed business meaning.
+      Every factual claim links to exact source at a recorded revision.
+    </p>
+
+    <form class="ask-form" (ngSubmit)="ask()">
+      <input type="text" [ngModel]="question()" (ngModelChange)="question.set($event)"
+             name="question" aria-label="Your question"
+             placeholder="e.g. If the purchase approval threshold changes, what else is affected?" />
+      <button class="primary" type="submit" [disabled]="loading() || !question().trim()">
+        {{ loading() ? 'Working…' : 'Ask' }}
+      </button>
+    </form>
+
+    <div class="examples">
+      @for (example of examples; track example) {
+        <button type="button" class="chip" (click)="ask(example)" [disabled]="loading()">
+          {{ example }}
+        </button>
+      }
+    </div>
+  </section>
+
+  @if (loading()) {
+    <section class="card" aria-live="polite">
+      <div class="row"><span class="spinner" aria-hidden="true"></span>
+        <strong>Retrieving evidence…</strong></div>
+      <p class="small muted" style="margin-bottom:0">
+        Planning the query, retrieving supporting evidence, and verifying citations.
+      </p>
+    </section>
+  }
+
+  @if (error()) {
+    <section class="card" role="alert">
+      <span class="badge danger">Request failed</span>
+      <p style="margin-bottom:0">{{ error() }}</p>
+    </section>
+  }
+
+  @if (answer(); as a) {
+    <!-- Progress: summaries only, never hidden reasoning (README 7.2). -->
+    @if (progress().length) {
+      <section class="card progress-card">
+        <h3>How this answer was produced</h3>
+        <ol class="progress-list">
+          @for (step of progress(); track step.stage) {
+            <li><strong>{{ step.stage }}</strong> — {{ step.detail }}</li>
+          }
+        </ol>
+      </section>
+    }
+
+    <section class="card">
+      <div class="spread" style="margin-bottom:10px">
+        <span class="badge {{ statusClass(a.status) }}">{{ statusLabel(a.status) }}</span>
+        @if (a.freshness) {
+          <span class="small muted">
+            Generation {{ a.freshness.generation }}
+            @if (a.freshness.stale) { · <strong>stale</strong> }
+          </span>
+        }
+      </div>
+
+      <p class="summary">{{ a.summary }}</p>
+
+      @if (a.usage?.model) {
+        <p class="small muted" style="margin-bottom:0">
+          Explanation composed by {{ a.usage?.model }}
+          @if (a.usage?.tokens) { · {{ a.usage?.tokens }} tokens }
+          · cost {{ a.usage?.cost !== null && a.usage?.cost !== undefined
+                    ? '$' + a.usage?.cost : 'not reported' }}
+        </p>
+      }
+    </section>
+
+    <!-- Findings with provenance and citations. -->
+    <section class="card">
+      <h2>Findings</h2>
+      @if (!a.claims.length) {
+        <p class="muted">No supported findings were produced for this question.</p>
+      }
+      <ul class="claims">
+        @for (claim of a.claims; track claim.id) {
+          <li class="claim">
+            <div class="claim-head">
+              <span class="badge {{ claim.provenance }}">{{ claim.provenance }}</span>
+              <span class="claim-text">{{ claim.text }}</span>
+            </div>
+
+            @if (claim.limitations.length) {
+              <ul class="limitations small">
+                @for (limitation of claim.limitations; track limitation) {
+                  <li>{{ limitation }}</li>
+                }
+              </ul>
+            }
+
+            @if (evidenceFor(claim.evidenceIds).length) {
+              <div class="evidence-links">
+                @for (evidence of evidenceFor(claim.evidenceIds); track evidence.id) {
+                  <button type="button" class="evidence-link"
+                          (click)="showEvidence(evidence)">
+                    {{ evidence.path }}:{{ evidence.startLine }}–{{ evidence.endLine }}
+                    <span class="rev">@{{ evidence.revision }}</span>
+                  </button>
+                }
+              </div>
+            } @else if (claim.provenance === 'derived') {
+              <p class="small muted" style="margin:4px 0 0">No source citation available.</p>
+            }
+          </li>
+        }
+      </ul>
+    </section>
+
+    <!-- Dependency paths, with a readable list alternative (README section 10). -->
+    @if (a.paths.length) {
+      <section class="card">
+        <div class="spread">
+          <h2 style="margin:0">Dependency paths</h2>
+          <div class="row">
+            <button type="button" [class.primary]="view() === 'paths'"
+                    (click)="view.set('paths')">Diagram</button>
+            <button type="button" [class.primary]="view() === 'list'"
+                    (click)="view.set('list')">List</button>
+          </div>
+        </div>
+
+        @if (view() === 'paths') {
+          <div class="paths scroll-x">
+            @for (path of a.paths; track $index) {
+              <div class="path-row">
+                @for (step of path.steps; track $index) {
+                  <span class="node">{{ shortSymbol(step.fromSymbol) }}</span>
+                  <span class="edge" [class.inferred-edge]="step.provenance === 'inferred'"
+                        [title]="step.inferenceReason || step.edgeType">
+                    <span class="edge-label">{{ step.edgeType }}</span>
+                    <span class="edge-line"></span>
+                  </span>
+                  @if ($last) {
+                    <span class="node">{{ shortSymbol(step.toSymbol) }}</span>
+                  }
+                }
+              </div>
+            }
+          </div>
+          <p class="small muted">
+            Dashed edges are <strong>inferred</strong>: supported by evidence such as a
+            matching route, but not proven by a resolved call.
+          </p>
+        } @else {
+          <div class="scroll-x">
+            <table>
+              <thead>
+                <tr><th>From</th><th>Relationship</th><th>To</th><th>Provenance</th><th>Basis</th></tr>
+              </thead>
+              <tbody>
+                @for (path of a.paths; track $index) {
+                  @for (step of path.steps; track $index) {
+                    <tr>
+                      <td class="mono">{{ shortSymbol(step.fromSymbol) }}</td>
+                      <td>{{ step.edgeType }}</td>
+                      <td class="mono">{{ shortSymbol(step.toSymbol) }}</td>
+                      <td><span class="badge {{ step.provenance }}">{{ step.provenance }}</span></td>
+                      <td class="small muted">{{ step.inferenceReason || 'Resolved by the extractor.' }}</td>
+                    </tr>
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+    }
+
+    <!-- Unknowns and gaps are always shown, never hidden (CC-3). -->
+    @if (a.unknowns.length || a.nextEvidenceNeeded.length || a.coverage?.gaps?.length) {
+      <section class="card gaps">
+        <h2>What this answer does not establish</h2>
+        @if (a.unknowns.length) {
+          <ul>
+            @for (unknown of a.unknowns; track unknown) { <li>{{ unknown }}</li> }
+          </ul>
+        }
+        @if (a.nextEvidenceNeeded.length) {
+          <h3>Evidence that would help</h3>
+          <ul>
+            @for (need of a.nextEvidenceNeeded; track need) { <li>{{ need }}</li> }
+          </ul>
+        }
+        @if (a.coverage) {
+          <h3>Supported analysis scope</h3>
+          <p class="small muted">{{ a.coverage.supportedScope }}</p>
+        }
+      </section>
+    }
+  }
+</div>
+
+<!-- Evidence drawer: exact source at the recorded revision. -->
+@if (openEvidence(); as evidence) {
+  <div class="drawer-backdrop" (click)="closeEvidence()"></div>
+  <aside class="drawer" role="dialog" aria-label="Source evidence">
+    <div class="drawer-head">
+      <div>
+        <h3 style="margin:0">{{ evidence.path }}</h3>
+        <p class="small muted" style="margin:2px 0 0">
+          {{ evidence.assetId }} · lines {{ evidence.startLine }}–{{ evidence.endLine }}
+          · revision <span class="mono">{{ evidence.revision }}</span>
+        </p>
+        @if (evidence.symbol) {
+          <p class="small mono" style="margin:2px 0 0">{{ evidence.symbol }}</p>
+        }
+      </div>
+      <button type="button" (click)="closeEvidence()" aria-label="Close">✕</button>
+    </div>
+
+    <pre class="code"><code>@for (line of excerptLines(evidence); track line.number) {<span class="ln">{{ line.number }}</span>{{ line.text }}
+}</code></pre>
+
+    <p class="small muted">
+      Exact stored content at the recorded revision. CodeAtlas never modifies
+      indexed source.
+    </p>
+  </aside>
+}

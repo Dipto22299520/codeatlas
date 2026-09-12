@@ -1,0 +1,139 @@
+<div class="stack" style="max-width:1100px">
+  <section class="card">
+    <div class="spread">
+      <div>
+        <h1 style="margin:0">Business Knowledge</h1>
+        <p class="small muted" style="margin:4px 0 0">
+          Reviewed statements in business language, each anchored to specific
+          software. Drafts never appear as reviewed facts.
+        </p>
+      </div>
+      @if (canReview()) {
+        <button class="primary" type="button" (click)="showForm.set(!showForm())">
+          {{ showForm() ? 'Cancel' : 'New statement' }}
+        </button>
+      }
+    </div>
+  </section>
+
+  @if (brokenAnchors().length) {
+    <section class="card" role="alert" style="border-color:#efc0c0">
+      <span class="badge danger">Broken anchors ({{ brokenAnchors().length }})</span>
+      <p style="margin:8px 0 0">
+        These reviewed statements point at symbols that no longer exist. A refresh
+        will fail until they are re-anchored and reviewed again.
+      </p>
+      <ul class="small mono" style="margin:6px 0 0; padding-left:20px">
+        @for (anchor of brokenAnchors(); track $index) {
+          <li>{{ anchor['asset_id'] }} · {{ anchor['symbol_key'] }}</li>
+        }
+      </ul>
+    </section>
+  }
+
+  @if (message()) {
+    <section class="card"><span class="badge derived">Saved</span>
+      <p style="margin:8px 0 0">{{ message() }}</p></section>
+  }
+  @if (error()) {
+    <section class="card" role="alert"><span class="badge danger">Problem</span>
+      <p style="margin:8px 0 0">{{ error() }}</p></section>
+  }
+
+  @if (showForm()) {
+    <section class="card">
+      <h2>New business statement</h2>
+      <p class="small muted">
+        Saved as a draft. A reviewer must approve it before it is published as
+        reviewed knowledge, and at least one source anchor is required.
+      </p>
+      <form class="stack" (ngSubmit)="submitDraft()">
+        <div>
+          <label class="small muted" for="k-name">Business name</label>
+          <input id="k-name" name="kname" [ngModel]="fName()" (ngModelChange)="fName.set($event)" />
+        </div>
+        <div>
+          <label class="small muted" for="k-stmt">Statement (business language)</label>
+          <textarea id="k-stmt" name="kstmt" rows="3" [ngModel]="fStatement()"
+                    (ngModelChange)="fStatement.set($event)"></textarea>
+        </div>
+        <div>
+          <label class="small muted" for="k-reason">Reason for this version</label>
+          <input id="k-reason" name="kreason" [ngModel]="fReason()" (ngModelChange)="fReason.set($event)" />
+        </div>
+        <div class="row" style="align-items:flex-end">
+          <div style="flex:1">
+            <label class="small muted" for="k-asset">Asset</label>
+            <input id="k-asset" name="kasset" [ngModel]="fAsset()" (ngModelChange)="fAsset.set($event)" />
+          </div>
+          <div style="flex:2">
+            <label class="small muted" for="k-symbol">Anchor symbol (qualified name)</label>
+            <input id="k-symbol" name="ksymbol" [ngModel]="fSymbol()" (ngModelChange)="fSymbol.set($event)"
+                   placeholder="com.example.approval.ApprovalService.decideApproval" />
+          </div>
+        </div>
+        <div>
+          <label class="small muted" for="k-path">Source path</label>
+          <input id="k-path" name="kpath" [ngModel]="fPath()" (ngModelChange)="fPath.set($event)"
+                 placeholder="src/main/java/com/example/approval/ApprovalService.java" />
+        </div>
+        <button class="primary" type="submit" [disabled]="busy()">
+          {{ busy() ? 'Saving…' : 'Save as draft' }}
+        </button>
+      </form>
+    </section>
+  }
+
+  <section class="card">
+    <div class="row" style="margin-bottom:10px">
+      <span class="small muted">Filter:</span>
+      <button type="button" [class.primary]="filter()==='all'" (click)="filter.set('all')">All</button>
+      <button type="button" [class.primary]="filter()==='reviewed'" (click)="filter.set('reviewed')">Reviewed</button>
+      <button type="button" [class.primary]="filter()==='draft'" (click)="filter.set('draft')">Drafts</button>
+    </div>
+
+    @if (loading()) { <p class="muted">Loading…</p> }
+    @if (!loading() && !visible().length) {
+      <p class="muted">No statements match this filter.</p>
+    }
+
+    <div class="stack">
+      @for (row of visible(); track row.version_id) {
+        <article style="border-left:3px solid var(--border); padding-left:12px">
+          <div class="spread">
+            <div class="row">
+              <strong>{{ row.business_name }}</strong>
+              <span class="badge {{ row.status === 'reviewed' ? 'reviewed'
+                     : row.status === 'draft' ? 'inferred' : 'unknown' }}">
+                {{ row.status }} · v{{ row['version_id'].split('-v')[1] }}
+              </span>
+              @if (row.broken_anchor_count > 0) {
+                <span class="badge danger">{{ row.broken_anchor_count }} broken anchor</span>
+              }
+              @if (row.source_origin === 'ai_suggestion') {
+                <span class="badge inferred">AI suggestion — not reviewed</span>
+              }
+            </div>
+            @if (row.status === 'draft' && canReview()) {
+              <div class="row">
+                <button type="button" class="primary" [disabled]="busy()"
+                        (click)="review(row, 'approve')">Approve</button>
+                <button type="button" [disabled]="busy()" (click)="review(row, 'reject')">Reject</button>
+              </div>
+            }
+          </div>
+
+          <p style="margin:6px 0">{{ row.statement }}</p>
+          <p class="small muted" style="margin:0">
+            {{ row.anchor_count }} anchor(s) · owner {{ row.owner }} ·
+            authored by {{ row.author }} on {{ row.authored_at | date:'mediumDate' }}
+            @if (row.reviewer) {
+              · reviewed by {{ row.reviewer }} on {{ row.reviewed_at | date:'mediumDate' }}
+            }
+          </p>
+          <p class="small muted" style="margin:2px 0 0"><em>Reason: {{ row.reason }}</em></p>
+        </article>
+      }
+    </div>
+  </section>
+</div>

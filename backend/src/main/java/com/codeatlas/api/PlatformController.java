@@ -60,7 +60,7 @@ public class PlatformController {
                 + " (SELECT count(*) FROM asset_exclusion e WHERE e.asset_id = a.id) AS exclusion_count, "
                 + " (SELECT max(r.indexed_at) FROM source_revision r WHERE r.asset_id = a.id) AS last_indexed "
                 + "FROM asset a WHERE a.id = ANY(?) ORDER BY a.id",
-                principal.authorizedAssets().toArray(new String[0]));
+                (Object) principal.authorizedAssets().toArray(new String[0]));
     }
 
     @PostMapping("/assets")

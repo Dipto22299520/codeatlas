@@ -1,0 +1,132 @@
+<div class="stack" style="max-width:1100px">
+  <section class="card">
+    <div class="spread">
+      <div>
+        <h1 style="margin:0">Refresh &amp; Trust</h1>
+        <p class="small muted" style="margin:4px 0 0">
+          What the platform knows, how current it is, and what it could not interpret.
+        </p>
+      </div>
+      @if (isOwner()) {
+        <button class="primary" type="button" (click)="runRefresh()" [disabled]="refreshing()">
+          {{ refreshing() ? 'Refreshing…' : 'Run full refresh' }}
+        </button>
+      } @else {
+        <span class="small muted">Refresh requires the platform owner role.</span>
+      }
+    </div>
+  </section>
+
+  @if (error()) {
+    <section class="card" role="alert"><span class="badge danger">Problem</span>
+      <p style="margin:8px 0 0">{{ error() }}</p></section>
+  }
+
+  @if (result(); as r) {
+    <section class="card" [style.border-color]="r.state === 'failed' ? '#efc0c0' : undefined">
+      <span class="badge {{ r.state === 'succeeded' ? 'derived' : 'danger' }}">
+        Refresh {{ r.state }}
+      </span>
+      @if (r.failureReason) {
+        <p style="margin:8px 0 0"><strong>The previous generation is still being served.</strong></p>
+        <p class="small" style="margin:4px 0 0">{{ r.failureReason }}</p>
+      } @else {
+        <p class="small muted" style="margin:8px 0 0">
+          Generation {{ r.generationId }} published ·
+          {{ r.counts['nodes'] }} items, {{ r.counts['edges'] }} relationships,
+          {{ r.counts['inferredCrossAssetEdges'] }} inferred cross-application link(s).
+        </p>
+      }
+    </section>
+  }
+
+  @if (status(); as s) {
+    <section class="card">
+      <h2>Platform state</h2>
+      <div class="scroll-x">
+        <table>
+          <tbody>
+            <tr><th style="width:200px">Active generation</th>
+                <td class="mono">{{ s.freshness?.generation || 'none published' }}</td></tr>
+            <tr><th>Deployment profile</th>
+                <td>{{ statusData('profile') }}
+                  @if (api.identity()?.externalInference) {
+                    <span class="badge inferred">external inference enabled</span>
+                  } @else {
+                    <span class="badge derived">no external egress</span>
+                  }
+                </td></tr>
+            <tr><th>Inference endpoint</th>
+                <td>{{ statusData('modelConfigured') ? 'configured' : 'not configured — answers are evidence-only' }}</td></tr>
+            <tr><th>Relationships</th><td>{{ statusData('edgeCount') }}</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      @for (claim of s.claims; track claim.id) {
+        <p class="small muted" style="margin:8px 0 0">{{ claim.text }}</p>
+      }
+    </section>
+
+    <section class="card">
+      <h2>Indexed assets</h2>
+      <div class="scroll-x">
+        <table>
+          <thead><tr><th>Asset</th><th>Owner</th><th>Language</th><th>Items extracted</th></tr></thead>
+          <tbody>
+            @for (row of assetRows(); track $index) {
+              <tr>
+                <td>{{ row['business_name'] }}<div class="small muted mono">{{ row['id'] }}</div></td>
+                <td class="small">{{ row['owner'] }}</td>
+                <td><span class="badge {{ row['language'] === 'java' ? 'derived' : 'inferred' }}">
+                  {{ row['language'] }}</span></td>
+                <td>{{ row['node_count'] }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+
+  <section class="card">
+    <h2>Coverage gaps</h2>
+    @if (!findings().length) {
+      <p class="muted">No uninterpreted constructs recorded in the active generation.</p>
+    } @else {
+      <div class="row" style="flex-wrap:wrap; margin-bottom:8px">
+        @for (t of findingTypes(); track t.type) {
+          <span class="badge inferred">{{ t.type }}: {{ t.count }}</span>
+        }
+      </div>
+      <ul class="small muted" style="margin:0; padding-left:20px">
+        @for (finding of findings(); track finding.id) {
+          <li><strong>{{ finding.asset_id }}</strong> — {{ finding.detail }}</li>
+        }
+      </ul>
+    }
+  </section>
+
+  <section class="card">
+    <h2>Refresh history</h2>
+    @if (!jobs().length) { <p class="muted">No refresh has run yet.</p> }
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Job</th><th>Scope</th><th>State</th><th>Started</th><th>Detail</th></tr></thead>
+        <tbody>
+          @for (job of jobs(); track $index) {
+            <tr>
+              <td class="mono small">{{ job['id'] }}</td>
+              <td>{{ job['scope'] }}</td>
+              <td><span class="badge {{ job['state'] === 'succeeded' ? 'derived'
+                       : job['state'] === 'failed' ? 'danger' : 'unknown' }}">
+                {{ job['state'] }}</span></td>
+              <td class="small">{{ $any(job)['started_at'] | date:'short' }}</td>
+              <td class="small muted">{{ job['failure_reason'] || '—' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>

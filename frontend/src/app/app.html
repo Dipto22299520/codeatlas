@@ -1,0 +1,71 @@
+@if (api.isAuthenticated()) {
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <span class="mark">CA</span>
+        <div>
+          <strong>CodeAtlas</strong>
+          <div class="small muted">Code knowledge &amp; change intelligence</div>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="Main">
+        <a routerLink="/workspace" routerLinkActive="active">Workspace</a>
+        <a routerLink="/estate" routerLinkActive="active">Estate</a>
+        <a routerLink="/knowledge" routerLinkActive="active">Business Knowledge</a>
+        <a routerLink="/trust" routerLinkActive="active">Refresh &amp; Trust</a>
+      </nav>
+
+      <div class="session">
+        <!-- The deployment profile is always visible (README section 1). -->
+        @if (api.identity()?.externalInference) {
+          <span class="badge inferred" title="Synthetic demo data with external inference enabled">
+            demo · external inference
+          </span>
+        } @else {
+          <span class="badge derived">{{ api.identity()?.profile }} · local only</span>
+        }
+        <span class="small muted">
+          {{ api.identity()?.username }} ({{ api.identity()?.role }})
+        </span>
+        <button type="button" (click)="signOut()">Sign out</button>
+      </div>
+    </header>
+
+    <main class="content">
+      <router-outlet />
+    </main>
+  </div>
+} @else {
+  <div class="signin-wrap">
+    <form class="card signin" (ngSubmit)="signIn()">
+      <div class="brand" style="margin-bottom: 4px">
+        <span class="mark">CA</span>
+        <strong>CodeAtlas</strong>
+      </div>
+      <p class="small muted" style="margin-top: 0">
+        Sign in to inspect the registered estate. Demo accounts:
+        <code>owner</code>, <code>reviewer</code>, <code>reader</code> —
+        password is the username followed by <code>-demo</code>.
+      </p>
+
+      <label for="username" class="small">Username</label>
+      <input id="username" name="username" [ngModel]="username()"
+             (ngModelChange)="username.set($event)" autocomplete="username" />
+
+      <label for="password" class="small">Password</label>
+      <input id="password" name="password" type="password" [ngModel]="password()"
+             (ngModelChange)="password.set($event)" autocomplete="current-password" />
+
+      @if (error()) {
+        <p class="badge danger" role="alert" style="display: block; padding: 8px 10px">
+          {{ error() }}
+        </p>
+      }
+
+      <button class="primary" type="submit" [disabled]="signingIn()">
+        {{ signingIn() ? 'Signing in…' : 'Sign in' }}
+      </button>
+    </form>
+  </div>
+}
