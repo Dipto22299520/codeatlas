@@ -77,6 +77,29 @@ public class PlatformController {
         }
     }
 
+    public record ScopeGrant(List<String> usernames) {
+    }
+
+    /**
+     * Grants an asset to users so it enters their authorized scope. Owner only,
+     * enforced by the security filter chain.
+     */
+    @PostMapping("/assets/{assetId}/scope")
+    public ResponseEntity<?> grantScope(@PathVariable String assetId,
+                                        @RequestBody ScopeGrant grant) {
+        Principal principal = scopeService.currentPrincipal();
+        if (registry.findById(assetId) == null) {
+            return ResponseEntity.notFound().build();
+        }
+        for (String username : grant.usernames()) {
+            jdbc.update("INSERT INTO user_asset_scope (username, asset_id) VALUES (?, ?) "
+                    + "ON CONFLICT DO NOTHING", username, assetId);
+        }
+        audit.record(principal.username(), "rest", "grant_scope", assetId,
+                String.join(",", grant.usernames()), null);
+        return ResponseEntity.ok(Map.of("assetId", assetId, "granted", grant.usernames()));
+    }
+
     /** Runs a refresh. Owner-only, enforced by the security filter chain. */
     @PostMapping("/refresh")
     public RefreshService.RefreshResult refresh(@RequestBody(required = false) Map<String, Object> body) {

@@ -72,6 +72,19 @@ export class Api {
       `${this.baseUrl}/services`, { headers: this.authHeaders() });
   }
 
+  /** Registers a new asset. Owner only; the backend validates the source path. */
+  registerAsset(asset: Record<string, unknown>): Observable<Record<string, unknown>> {
+    return this.http.post<Record<string, unknown>>(
+      `${this.baseUrl}/assets`, asset, { headers: this.authHeaders() });
+  }
+
+  /** Grants an asset to a user so it appears in their authorized scope. */
+  grantScope(assetId: string, usernames: string[]): Observable<Record<string, unknown>> {
+    return this.http.post<Record<string, unknown>>(
+      `${this.baseUrl}/assets/${assetId}/scope`, { usernames },
+      { headers: this.authHeaders() });
+  }
+
   assets(): Observable<Asset[]> {
     return this.http.get<Asset[]>(
       `${this.baseUrl}/assets`, { headers: this.authHeaders() });

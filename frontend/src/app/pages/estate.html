@@ -1,12 +1,114 @@
 <div class="stack" style="max-width:1100px">
   <section class="card">
-    <h1>Estate</h1>
-    <p class="small muted" style="margin-bottom:0">
-      Every registered asset, its owner, the analysis actually supported for it,
-      and what could not be interpreted. Unsupported assets stay registered with
-      a visible coverage gap rather than being hidden.
-    </p>
+    <div class="spread">
+      <div>
+        <h1 style="margin:0">Estate</h1>
+        <p class="small muted" style="margin:4px 0 0">
+          Every registered asset, its owner, the analysis actually supported for it,
+          and what could not be interpreted. Unsupported assets stay registered with
+          a visible coverage gap rather than being hidden.
+        </p>
+      </div>
+      @if (isOwner()) {
+        <button class="primary" type="button" (click)="toggleForm()">
+          {{ showForm() ? 'Cancel' : 'Register codebase' }}
+        </button>
+      }
+    </div>
   </section>
+
+  @if (message()) {
+    <section class="card">
+      <span class="badge derived">Registered</span>
+      <p style="margin:8px 0 0">{{ message() }}</p>
+    </section>
+  }
+
+  @if (showForm()) {
+    <section class="card">
+      <h2>Register a codebase</h2>
+      <p class="small muted">
+        The source path must resolve inside a configured read-only source root.
+        Paths that escape it are rejected. CodeAtlas never writes to registered
+        source.
+      </p>
+      <form class="stack" (ngSubmit)="register()">
+        <div class="row" style="align-items:flex-end">
+          <div style="flex:1">
+            <label class="small muted" for="a-name">Business name *</label>
+            <input id="a-name" name="aname" [ngModel]="fName()"
+                   (ngModelChange)="fName.set($event)"
+                   placeholder="Payments API" />
+          </div>
+          <div style="flex:1">
+            <label class="small muted" for="a-id">Identifier</label>
+            <input id="a-id" name="aid" [ngModel]="fId()"
+                   (ngModelChange)="fId.set($event)"
+                   placeholder="derived from the name if blank" />
+          </div>
+        </div>
+
+        <div>
+          <label class="small muted" for="a-path">Source path *</label>
+          <input id="a-path" name="apath" [ngModel]="fPath()"
+                 (ngModelChange)="fPath.set($event)"
+                 placeholder="my-service  (relative to the configured source root)" />
+        </div>
+
+        <div class="row" style="align-items:flex-end">
+          <div style="flex:1">
+            <label class="small muted" for="a-owner">Owning team</label>
+            <input id="a-owner" name="aowner" [ngModel]="fOwner()"
+                   (ngModelChange)="fOwner.set($event)" placeholder="Payments Team" />
+          </div>
+          <div style="flex:1">
+            <label class="small muted" for="a-role">Role</label>
+            <input id="a-role" name="arole" [ngModel]="fRole()"
+                   (ngModelChange)="fRole.set($event)" placeholder="Handles settlement" />
+          </div>
+        </div>
+
+        <div class="row" style="align-items:flex-end">
+          <div style="flex:1">
+            <label class="small muted" for="a-lang">Language</label>
+            <select id="a-lang" name="alang" [ngModel]="fLanguage()"
+                    (ngModelChange)="fLanguage.set($event)">
+              <option value="java">Java (structural analysis supported)</option>
+              <option value="typescript">TypeScript (registered, no analyzer)</option>
+              <option value="python">Python (registered, no analyzer)</option>
+              <option value="other">Other (registered, no analyzer)</option>
+            </select>
+          </div>
+          <div style="flex:1">
+            <label class="small muted" for="a-sens">Sensitivity</label>
+            <select id="a-sens" name="asens" [ngModel]="fSensitivity()"
+                    (ngModelChange)="fSensitivity.set($event)">
+              <option value="internal">Internal</option>
+              <option value="public">Public</option>
+              <option value="confidential">Confidential</option>
+            </select>
+          </div>
+        </div>
+
+        @if (fLanguage() !== 'java') {
+          <p class="badge inferred" style="display:block; padding:8px 10px">
+            No analyzer exists for this language. The asset will be registered
+            and listed with a visible coverage gap, and no structure derived.
+          </p>
+        }
+
+        @if (formError()) {
+          <p class="badge danger" role="alert" style="display:block; padding:8px 10px">
+            {{ formError() }}
+          </p>
+        }
+
+        <button class="primary" type="submit" [disabled]="saving()">
+          {{ saving() ? 'Registering…' : 'Register' }}
+        </button>
+      </form>
+    </section>
+  }
 
   @if (loading()) { <section class="card"><p class="muted">Loading estate…</p></section> }
   @if (error()) { <section class="card" role="alert"><span class="badge danger">{{ error() }}</span></section> }
