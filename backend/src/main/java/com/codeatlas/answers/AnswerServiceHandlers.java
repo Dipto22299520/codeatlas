@@ -1038,7 +1038,9 @@ public class AnswerServiceHandlers {
             builder.claims(checksAnswer.claims()).evidence(checksAnswer.evidence());
         }
         if (effectsAnswer.status() == Status.ANSWERED) {
-            builder.claims(effectsAnswer.claims());
+            // Carry the evidence too: a claim whose citation is missing from the
+            // evidence set is rejected by the verifier (README 7.2).
+            builder.claims(effectsAnswer.claims()).evidence(effectsAnswer.evidence());
         }
 
         // Review guidance is explicitly labelled as recommendation (README 7.3).

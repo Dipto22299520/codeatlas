@@ -130,7 +130,16 @@ public final class AnswerModels {
         public Builder data(Map<String, Object> data) { this.data = data; return this; }
 
         public Answer build() {
-            return new Answer(status, summary, List.copyOf(claims), List.copyOf(evidence),
+            // Composites merge evidence from several handlers; keep one record
+            // per id so citations resolve exactly once.
+            List<Evidence> deduplicated = new ArrayList<>();
+            java.util.Set<String> seen = new java.util.LinkedHashSet<>();
+            for (Evidence item : evidence) {
+                if (seen.add(item.id())) {
+                    deduplicated.add(item);
+                }
+            }
+            return new Answer(status, summary, List.copyOf(claims), List.copyOf(deduplicated),
                     List.copyOf(paths), List.copyOf(unknowns), List.copyOf(nextEvidenceNeeded),
                     freshness, coverage, usage, requestId, data);
         }
