@@ -8,3 +8,5 @@ dist/
 # Any local env variant
 .env.*
 !.env.example
+
+.logs/
